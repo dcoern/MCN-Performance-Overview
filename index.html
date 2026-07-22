@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revenue Command — Jul 2026</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D12;
+    --panel:#12161D;
+    --panel-2:#171C25;
+    --line:#20262F;
+    --hi:#EDF1F5;
+    --muted:#7C8697;
+    --muted-2:#4E5768;
+    --green:#34D399;
+    --red:#F87171;
+    --amber:#FBBF24;
+    --teal:#22D3EE;
+    --grid: rgba(255,255,255,0.06);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(34,211,238,0.07), transparent 60%),
+      radial-gradient(1000px 500px at -10% 110%, rgba(251,191,36,0.06), transparent 60%),
+      var(--bg);
+    color:var(--hi);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+  }
+  ::selection{background:rgba(34,211,238,0.25);}
+
+  /* ---------- Ticker (signature element) ---------- */
+  .ticker-wrap{
+    background:#000;
+    border-bottom:1px solid var(--line);
+    overflow:hidden;
+    white-space:nowrap;
+    position:relative;
+    height:34px;
+  }
+  .ticker-wrap::before, .ticker-wrap::after{
+    content:'';
+    position:absolute; top:0; bottom:0; width:40px; z-index:2;
+  }
+  .ticker-wrap::before{ left:0; background:linear-gradient(90deg,#000, transparent);}
+  .ticker-wrap::after{ right:0; background:linear-gradient(270deg,#000, transparent);}
+  .ticker-track{
+    display:inline-flex;
+    align-items:center;
+    height:34px;
+    animation:scroll 42s linear infinite;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px;
+    letter-spacing:0.02em;
+  }
+  .ticker-track span{ padding:0 22px; color:var(--muted); border-right:1px solid var(--line); }
+  .ticker-track span b{ color:var(--hi); font-weight:600; }
+  .ticker-track .up{ color:var(--green); }
+  .ticker-track .down{ color:var(--red); }
+  @keyframes scroll{ 0%{transform:translateX(0);} 100%{transform:translateX(-50%);} }
+
+  /* ---------- Header ---------- */
+  header.dash-header{
+    padding:28px 32px 20px;
+    display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px;
+    border-bottom:1px solid var(--line);
+  }
+  .brand-eyebrow{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:0.14em;
+    color:var(--teal); text-transform:uppercase; margin-bottom:6px; display:flex; align-items:center; gap:8px;
+  }
+  .live-dot{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 0 0 rgba(52,211,153,0.6); animation:pulse 1.8s infinite; }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(52,211,153,0.55); }
+    70%{ box-shadow:0 0 0 8px rgba(52,211,153,0); }
+    100%{ box-shadow:0 0 0 0 rgba(52,211,153,0); }
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:28px; margin:0; letter-spacing:-0.01em;
+  }
+  .sub{ color:var(--muted); font-size:13px; margin-top:4px; }
+  .pace-chip{
+    background:var(--panel); border:1px solid var(--line); border-radius:10px;
+    padding:10px 16px; font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--muted);
+    min-width:230px;
+  }
+  .pace-chip .pace-row{ display:flex; justify-content:space-between; margin-bottom:6px; }
+  .pace-bar{ height:6px; border-radius:4px; background:#1c222c; overflow:hidden; position:relative; }
+  .pace-bar i{ position:absolute; top:0; bottom:0; left:0; display:block; border-radius:4px; }
+  .pace-bar .elapsed{ background:var(--muted-2); }
+  .pace-bar .ach{ background:linear-gradient(90deg, var(--teal), var(--green)); }
+  .pace-legend{ display:flex; gap:14px; margin-top:6px; font-size:10.5px; }
+  .pace-legend span{ display:flex; align-items:center; gap:5px;}
+  .dot{width:7px;height:7px;border-radius:2px;display:inline-block;}
+
+  /* ---------- Data source badge ---------- */
+  .datasrc{
+    display:inline-flex; align-items:center; gap:7px; font-family:'JetBrains Mono',monospace; font-size:11px;
+    padding:6px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--muted); cursor:default;
+  }
+  .datasrc .dot{ width:7px; height:7px; border-radius:50%; }
+  .datasrc.live .dot{ background:var(--green); animation:pulse 1.8s infinite; }
+  .datasrc.sample .dot{ background:var(--amber); }
+  .datasrc.loading .dot{ background:var(--teal); animation:pulse 1s infinite; }
+  .datasrc.error .dot{ background:var(--red); }
+  .refresh-btn{
+    border:1px solid var(--line); background:var(--panel); color:var(--muted); border-radius:8px;
+    font-family:'JetBrains Mono',monospace; font-size:11px; padding:6px 10px; cursor:pointer; margin-left:8px;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .refresh-btn:hover{ color:var(--hi); border-color:#2b3340; }
+  .refresh-btn:disabled{ opacity:0.5; cursor:default; }
+
+  /* ---------- KPI grid ---------- */
+  .kpis{
+    display:grid; grid-template-columns:repeat(5,1fr); gap:14px;
+    padding:22px 32px; border-bottom:1px solid var(--line);
+  }
+  .kpi-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px;
+    position:relative; overflow:hidden; transition:transform .15s ease, border-color .15s ease;
+  }
+  .kpi-card:hover{ transform:translateY(-2px); border-color:#2b3340; }
+  .kpi-card .accent-bar{ position:absolute; left:0; top:0; bottom:0; width:3px; }
+  .kpi-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
+  .kpi-value{ font-family:'JetBrains Mono',monospace; font-size:21px; font-weight:600; color:var(--hi); }
+  .kpi-value small{ font-size:12px; color:var(--muted); font-weight:400; margin-left:2px;}
+  .kpi-delta{ font-size:12px; margin-top:8px; font-family:'JetBrains Mono',monospace; }
+  .kpi-delta.up{ color:var(--green); } .kpi-delta.down{ color:var(--red); } .kpi-delta.flat{ color:var(--muted); }
+
+  /* ---------- Period comparison cards (MoM/QoQ/YoY) ---------- */
+  .compare-section{ padding:4px 32px 22px; border-bottom:1px solid var(--line); }
+  .compare-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:6px; }
+  .compare-head .compare-title{ font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600; }
+  .compare-head .compare-note{ font-size:11px; color:var(--muted-2); font-family:'JetBrains Mono',monospace; }
+  .compare-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+  .compare-card{
+    background:var(--panel-2); border:1px solid var(--line); border-radius:14px; padding:16px 18px;
+    display:flex; flex-direction:column; gap:6px;
+  }
+  .compare-top{ display:flex; justify-content:space-between; align-items:center; }
+  .compare-badge{
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:0.06em;
+    padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.06); color:var(--muted);
+  }
+  .compare-growth{ font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; }
+  .compare-growth.up{ color:var(--green); } .compare-growth.down{ color:var(--red); } .compare-growth.na{ color:var(--muted-2); font-size:14px; }
+  .compare-detail{ font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
+  .compare-vs{ font-size:11px; color:var(--muted-2); }
+  @media (max-width:1000px){ .compare-grid{ grid-template-columns:1fr; } }
+
+  /* ---------- Layout ---------- */
+  .layout{ display:grid; grid-template-columns:290px 1fr; gap:0; min-height:calc(100vh - 260px); }
+
+  /* Nav pane */
+  aside.nav{
+    border-right:1px solid var(--line);
+    padding:20px 14px 40px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.015), transparent 200px);
+  }
+  .nav-title{ font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); padding:0 10px 12px; }
+  .nav-all{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:10px 12px; border-radius:10px; cursor:pointer; margin-bottom:6px;
+    font-weight:600; font-size:13.5px; border:1px solid transparent;
+  }
+  .nav-all.active, .nav-channel.active > .nav-channel-head{ background:rgba(34,211,238,0.09); border-color:rgba(34,211,238,0.35); }
+  .nav-channel{ margin-bottom:4px; }
+  .nav-channel-head{
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:10px 12px; border-radius:10px; cursor:pointer; border:1px solid transparent;
+  }
+  .nav-channel-head:hover{ background:rgba(255,255,255,0.03); }
+  .nav-channel-name{ display:flex; align-items:center; gap:9px; font-size:13.5px; font-weight:600; }
+  .chip{ width:6px; height:6px; border-radius:2px; flex-shrink:0; }
+  .nav-channel-gap{ font-family:'JetBrains Mono',monospace; font-size:11px; }
+  .caret{ font-size:10px; color:var(--muted-2); transition:transform .15s ease; }
+  .nav-channel.open .caret{ transform:rotate(90deg); }
+  .nav-units{ max-height:0; overflow:hidden; transition:max-height .2s ease; padding-left:8px; }
+  .nav-channel.open .nav-units{ max-height:500px; }
+  .nav-unit{
+    display:flex; justify-content:space-between; align-items:center; gap:6px;
+    padding:8px 12px 8px 20px; border-radius:8px; cursor:pointer; font-size:12.5px; color:var(--muted);
+    border-left:2px solid var(--line); margin:2px 0 2px 6px;
+  }
+  .nav-unit:hover{ color:var(--hi); background:rgba(255,255,255,0.03); }
+  .nav-unit.active{ color:var(--hi); border-left-color:var(--teal); background:rgba(34,211,238,0.07); }
+  .nav-unit-gap{ font-family:'JetBrains Mono',monospace; font-size:11px; }
+
+  /* Content */
+  section.content{ padding:24px 32px 40px; }
+  .content-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:10px;}
+  .scope-title{ font-family:'Space Grotesk',sans-serif; font-size:18px; font-weight:600; }
+  .scope-sub{ font-size:12px; color:var(--muted); margin-top:2px; }
+  .toggle-group{ display:flex; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:3px; }
+  .toggle-btn{
+    border:none; background:transparent; color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:11.5px;
+    padding:7px 14px; border-radius:8px; cursor:pointer;
+  }
+  .toggle-btn.active{ background:var(--teal); color:#04222a; font-weight:700; }
+
+  .chart-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px;
+    margin-bottom:20px;
+  }
+  .chart-canvas-wrap{ position:relative; }
+  .chart-legend{ display:flex; gap:18px; margin-bottom:10px; font-size:12px; color:var(--muted); font-family:'Inter',sans-serif; }
+  .chart-legend span{ display:flex; align-items:center; gap:7px; }
+  .chart-legend i{ width:10px; height:10px; border-radius:3px; display:inline-block; }
+  .bargroup rect{ transition: opacity .12s ease, y .25s ease, height .25s ease; cursor:pointer; }
+  .bargroup:hover rect{ opacity:0.82; }
+  .axis-label{ fill:var(--muted); font-family:'JetBrains Mono', monospace; }
+  .grid-line{ stroke:rgba(255,255,255,0.06); stroke-width:1; }
+  .chart-tooltip{
+    position:absolute; pointer-events:none; background:#171C25; border:1px solid #20262F; border-radius:10px;
+    padding:10px 12px; font-size:12px; color:var(--hi); font-family:'JetBrains Mono',monospace;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4); opacity:0; transform:translateY(4px); transition:opacity .12s ease, transform .12s ease;
+    white-space:nowrap; z-index:10;
+  }
+  .chart-tooltip.show{ opacity:1; transform:translateY(0); }
+  .chart-tooltip .tt-title{ color:var(--muted); font-family:'Inter',sans-serif; font-size:11px; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.04em; }
+  .chart-tooltip .tt-row{ display:flex; justify-content:space-between; gap:16px; }
+
+  .table-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+  }
+  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  thead th{
+    text-align:right; padding:12px 16px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em;
+    color:var(--muted); border-bottom:1px solid var(--line); font-weight:600; background:var(--panel-2);
+  }
+  thead th:first-child, tbody td:first-child{ text-align:left; }
+  tbody td{ padding:11px 16px; text-align:right; border-bottom:1px solid var(--line); font-family:'JetBrains Mono',monospace; font-size:12.5px; }
+  tbody tr:last-child td{ border-bottom:none; }
+  tbody tr:hover{ background:rgba(255,255,255,0.02); }
+  tbody td:first-child{ font-family:'Inter',sans-serif; font-weight:600; font-size:13px; }
+  .gap-up{ color:var(--green); } .gap-down{ color:var(--red); }
+  tr.total-row td{ background:var(--panel-2); font-weight:700; color:var(--hi); }
+
+  @media (max-width:1000px){
+    .kpis{ grid-template-columns:repeat(2,1fr); }
+    .layout{ grid-template-columns:1fr; }
+    aside.nav{ border-right:none; border-bottom:1px solid var(--line); }
+  }
+</style>
+</head>
+<body>
+
+<div class="ticker-wrap">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<header class="dash-header">
+  <div>
+    <div class="brand-eyebrow"><span class="live-dot"></span> MNC GROUP · REVENUE COMMAND</div>
+    <h1>Pantauan Pendapatan — Juli 2026</h1>
+    <div class="sub" id="headerSub">Target periode Jul-2026 &nbsp;·&nbsp; Aktual per 17-Jul-2026 &nbsp;·&nbsp; 5 Group Channel / 19 Group Unit Business</div>
+    <div style="margin-top:10px; display:flex; align-items:center;">
+      <span class="datasrc loading" id="dataSrcBadge"><span class="dot"></span><span id="dataSrcText">Memuat data...</span></span>
+      <button class="refresh-btn" id="refreshBtn" title="Ambil ulang data dari Google Sheet">↻ Refresh</button>
+    </div>
+  </div>
+  <div class="pace-chip">
+    <div class="pace-row"><span>Progress bulan</span><span id="paceElapsed">54.8%</span></div>
+    <div class="pace-bar"><i class="elapsed" style="width:54.8%"></i></div>
+    <div class="pace-row" style="margin-top:10px;"><span>Achievement vs Target</span><span id="paceAch">73.92%</span></div>
+    <div class="pace-bar"><i class="ach" style="width:73.92%"></i></div>
+    <div class="pace-legend">
+      <span><i class="dot" style="background:var(--muted-2)"></i>Hari ke-17 dari 31</span>
+      <span><i class="dot" style="background:var(--green)"></i>Ahead of pace</span>
+    </div>
+  </div>
+</header>
+
+<section class="kpis" id="kpiGrid"></section>
+
+<section class="compare-section">
+  <div class="compare-head">
+    <span class="compare-title">Perbandingan Periode · Estimated Closing</span>
+    <span class="compare-note" id="compareNote"></span>
+  </div>
+  <div class="compare-grid" id="compareGrid"></div>
+</section>
+
+<div class="layout">
+  <aside class="nav" id="navPane">
+    <div class="nav-title">Group Unit Business</div>
+    <div class="nav-all active" id="navAll">
+      <span>Semua Channel</span>
+      <span class="nav-channel-gap up">+34.79%</span>
+    </div>
+    <div id="navChannels"></div>
+  </aside>
+
+  <section class="content">
+    <div class="content-head">
+      <div>
+        <div class="scope-title" id="scopeTitle">Semua Channel</div>
+        <div class="scope-sub" id="scopeSub">Perbandingan Target vs Aktual per Group Channel</div>
+      </div>
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-mode="full">Full Month</button>
+        <button class="toggle-btn" data-mode="mtd">MTD</button>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="chart-legend" id="chartLegend"></div>
+      <div class="chart-canvas-wrap" id="chartWrap"></div>
+    </div>
+
+    <div class="table-card">
+      <table>
+        <thead>
+          <tr>
+            <th>Unit</th>
+            <th>Target</th>
+            <th>MTD Target</th>
+            <th>Est. Revenue</th>
+            <th>Est. Closing</th>
+            <th>MTD %</th>
+            <th>Achv %</th>
+            <th>Gap MTD %</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<script src="sheet-config.js"></script>
+<script>
+/* ============ SAMPLE DATA (fallback jika Google Sheet belum di-setup / gagal diakses) ============ */
+const SAMPLE_DATA = [
+  { name:"3-FTA", color:"#F87171",
+    total:{target:1667197658.00, mtdTarget:914269683.42, actual:640490472.02, closing:1167953213.69, mtdPct:70.05, achPct:38.42, gapPct:-29.95},
+    units:[
+      {name:"GTV", target:118405799.00, mtdTarget:64932212.35, actual:64162116.28, closing:117001506.16, mtdPct:98.81, achPct:54.19, gapPct:-1.19},
+      {name:"MNCTV", target:226448683.00, mtdTarget:124181535.84, actual:127879110.69, closing:233191319.49, mtdPct:102.98, achPct:56.47, gapPct:2.98},
+      {name:"RCTI", target:1322343176.00, mtdTarget:725155935.23, actual:448449245.05, closing:817760388.04, mtdPct:61.84, achPct:33.91, gapPct:-38.16},
+    ]},
+  { name:"IMG Group", color:"#FBBF24",
+    total:{target:1245083338.00, mtdTarget:682787636.97, actual:593503360.11, closing:1082270833.13, mtdPct:86.92, achPct:47.67, gapPct:-13.08},
+    units:[
+      {name:"IDX", target:63872776.00, mtdTarget:35027006.19, actual:29615812.89, closing:54005305.86, mtdPct:84.55, achPct:46.37, gapPct:-15.45},
+      {name:"iNews", target:848275278.00, mtdTarget:465183216.97, actual:379070840.09, closing:691246826.05, mtdPct:81.49, achPct:44.69, gapPct:-18.51},
+      {name:"Okezone", target:107201675.00, mtdTarget:58788015.32, actual:57786041.26, closing:105374545.83, mtdPct:98.30, achPct:53.90, gapPct:-1.70},
+      {name:"Sindo", target:225733609.00, mtdTarget:123789398.48, actual:127030665.86, closing:231644155.40, mtdPct:102.62, achPct:56.27, gapPct:2.62},
+    ]},
+  { name:"Others Unit", color:"#22D3EE",
+    total:{target:355530000.00, mtdTarget:194968064.52, actual:225297958.59, closing:410837453.89, mtdPct:115.56, achPct:63.37, gapPct:15.56},
+    units:[
+      {name:"AMP", target:9450000.00, mtdTarget:5182258.06, actual:2304052.40, closing:4201507.31, mtdPct:44.46, achPct:24.38, gapPct:-55.54},
+      {name:"HighEnd Magazine", target:70000.00, mtdTarget:38387.10, actual:55770.61, closing:101699.35, mtdPct:145.28, achPct:79.67, gapPct:45.28},
+      {name:"MNC Animation", target:25970000.00, mtdTarget:14241612.90, actual:19215531.47, closing:35040086.30, mtdPct:134.93, achPct:73.99, gapPct:34.93},
+      {name:"MNC Channels", target:3290000.00, mtdTarget:1804193.55, actual:4714488.06, closing:8597007.64, mtdPct:261.31, achPct:143.30, gapPct:161.31},
+      {name:"MNC Content", target:130760000.00, mtdTarget:71707096.77, actual:60621733.67, closing:110545514.34, mtdPct:84.54, achPct:46.36, gapPct:-15.46},
+      {name:"MNC Pictures", target:57470000.00, mtdTarget:31515806.45, actual:108509839.43, closing:197870883.67, mtdPct:344.30, achPct:188.81, gapPct:244.30},
+      {name:"RCTI+", target:37100000.00, mtdTarget:20345161.29, actual:6734066.50, closing:12279768.33, mtdPct:33.10, achPct:18.15, gapPct:-66.90},
+      {name:"StarPro", target:59220000.00, mtdTarget:32475483.87, actual:15230429.29, closing:27773135.76, mtdPct:46.90, achPct:25.72, gapPct:-53.10},
+      {name:"Vision+", target:32200000.00, mtdTarget:17658064.52, actual:7912047.15, closing:14427850.69, mtdPct:44.81, achPct:24.57, gapPct:-55.19},
+    ]},
+  { name:"StarHits", color:"#34D399",
+    total:{target:3758556167.00, mtdTarget:2061143704.48, actual:3700243520.08, closing:6747502889.55, mtdPct:179.52, achPct:98.45, gapPct:79.52},
+    units:[
+      {name:"StarHits (External)", target:2255132501.00, mtdTarget:1236685565.06, actual:2755559345.76, closing:5024843512.86, mtdPct:222.82, achPct:122.19, gapPct:122.82},
+      {name:"StarHits (Internal)", target:1503423666.00, mtdTarget:824458139.42, actual:944684174.32, closing:1722659376.69, mtdPct:114.58, achPct:62.84, gapPct:14.58},
+    ]},
+  { name:"UGC", color:"#7C8697",
+    total:{target:0.00, mtdTarget:0.00, actual:34055123.58, closing:62100519.47, mtdPct:0.00, achPct:0.00, gapPct:0.00},
+    units:[
+      {name:"UGC", target:0.00, mtdTarget:0.00, actual:34055123.58, closing:62100519.47, mtdPct:0.00, achPct:0.00, gapPct:0.00},
+    ]},
+];
+
+const SAMPLE_GRAND = {target:7026367163.00, mtdTarget:3853169089.39, actual:5193590434.37, closing:9470664909.74, mtdPct:134.79, achPct:73.92, gapPct:34.79};
+const SAMPLE_CURRENT_PERIOD = "2026-07";
+
+/* DATA/GRAND aktif yang dipakai seluruh dashboard. Mulai dengan sample,
+   akan ditimpa oleh data live dari Google Sheet begitu berhasil di-fetch. */
+let DATA = SAMPLE_DATA;
+let GRAND = SAMPLE_GRAND;
+
+/* periodsIndex/currentPeriod dipakai khusus untuk kartu perbandingan
+   MoM/QoQ/YoY. Diisi ulang saat data live berhasil dimuat (lihat loadData). */
+let periodsIndex = {};
+let currentPeriod = SAMPLE_CURRENT_PERIOD;
+let comparisonsAreSynthetic = true; // true = kartu MoM/QoQ/YoY memakai data demo, bukan sheet asli
+
+/** Hash string -> [0,1), dipakai supaya data historis contoh konsisten
+ *  setiap reload (bukan acak tiap kali), tanpa perlu simpan angka manual. */
+function _seededRand(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){ h = (Math.imul(31,h) + str.charCodeAt(i)) | 0; }
+  return ((h >>> 0) % 10000) / 10000;
+}
+
+/** Bangun 13 bulan riwayat sintetis (bulan berjalan + 12 bulan ke belakang)
+ *  dari SAMPLE_DATA, untuk demo kartu MoM/QoQ/YoY saat belum terhubung ke
+ *  Google Sheet asli. Setiap unit diberi faktor skala berbeda per bulan,
+ *  dengan tren umum "lebih kecil di masa lalu" supaya growth terlihat wajar. */
+function buildSyntheticPeriodsIndex(){
+  const index = { [SAMPLE_CURRENT_PERIOD]: { DATA: SAMPLE_DATA, GRAND: SAMPLE_GRAND } };
+
+  for(let back=1; back<=13; back++){
+    const label = shiftMonth(SAMPLE_CURRENT_PERIOD, -back);
+    const scaledChannels = SAMPLE_DATA.map(ch => {
+      const scaledUnits = ch.units.map(u => {
+        const noise = (_seededRand(u.name + '|' + back) - 0.5) * 0.18; // ±9%
+        const trend = back * 0.012; // tren naik ~1.2%/bulan menuju sekarang
+        const factor = Math.max(0.35, 1 - trend + noise);
+        const target = u.target * factor, mtdTarget = u.mtdTarget * factor;
+        const actual = u.actual * factor, closing = u.closing * factor;
+        const { mtdPct, achPct, gapPct } = _computePercents(target, mtdTarget, actual);
+        return { name:u.name, target, mtdTarget, actual, closing, mtdPct, achPct, gapPct };
+      });
+      const sum = key => scaledUnits.reduce((s,u)=>s+u[key],0);
+      const target = sum('target'), mtdTarget = sum('mtdTarget'), actual = sum('actual'), closing = sum('closing');
+      const { mtdPct, achPct, gapPct } = _computePercents(target, mtdTarget, actual);
+      return { name: ch.name, color: ch.color, total:{target,mtdTarget,actual,closing,mtdPct,achPct,gapPct}, units: scaledUnits };
+    });
+    const gSum = key => scaledChannels.reduce((s,c)=>s+c.total[key],0);
+    const gTarget = gSum('target'), gMtd = gSum('mtdTarget'), gActual = gSum('actual'), gClosing = gSum('closing');
+    const gPct = _computePercents(gTarget, gMtd, gActual);
+    index[label] = { DATA: scaledChannels, GRAND: { target:gTarget, mtdTarget:gMtd, actual:gActual, closing:gClosing, ...gPct } };
+  }
+  return index;
+}
+
+/* ============ HELPERS ============ */
+const fmtIDR = (n, compact=true) => {
+  if(!compact) return "Rp " + n.toLocaleString('id-ID',{maximumFractionDigits:0});
+  const abs = Math.abs(n);
+  if(abs >= 1e9) return "Rp " + (n/1e9).toFixed(2) + " M";
+  if(abs >= 1e6) return "Rp " + (n/1e6).toFixed(1) + " Jt";
+  return "Rp " + n.toLocaleString('id-ID',{maximumFractionDigits:0});
+};
+const pct = n => (n>0?"+":"") + n.toFixed(2) + "%";
+const gapClass = n => n >= 0 ? "gap-up" : "gap-down";
+const arrow = n => n >= 0 ? "▲" : "▼";
+
+/* ============ STATE ============ */
+let state = { channel:null, unit:null, mode:'full' }; // mode: 'full' -> Target vs Est.Closing, 'mtd' -> MTD Target vs Est.Revenue
+
+/* ============ TICKER ============ */
+function buildTicker(){
+  const items = [
+    `GRAND TOTAL ACHIEVEMENT <b>${GRAND.achPct.toFixed(2)}%</b>`,
+    ...DATA.map(c => `${c.name.toUpperCase()} GAP MTD <span class="${c.total.gapPct>=0?'up':'down'}">${arrow(c.total.gapPct)} ${pct(c.total.gapPct)}</span>`),
+    `EST. CLOSING <b>${fmtIDR(GRAND.closing,false)}</b>`,
+    `TARGET JUL-2026 <b>${fmtIDR(GRAND.target,false)}</b>`,
+  ];
+  const html = items.map(t => `<span>${t}</span>`).join('');
+  document.getElementById('tickerTrack').innerHTML = html + html; // duplicate for seamless loop
+}
+
+/* ============ KPI CARDS ============ */
+function currentScope(){
+  if(state.unit) return {label: state.unit.name, data: state.unit, isUnit:true};
+  if(state.channel) return {label: state.channel.name, data: state.channel.total, isUnit:false};
+  return {label:"Semua Channel", data: GRAND, isUnit:false};
+}
+
+function renderKPIs(){
+  const scope = currentScope();
+  const d = scope.data;
+  const cards = [
+    {label:"Target (Full Month)", value: fmtIDR(d.target,false), accent:"var(--amber)", delta:null},
+    {label:"MTD Target", value: fmtIDR(d.mtdTarget,false), accent:"var(--muted-2)", delta:null},
+    {label:"Est. Revenue (Aktual)", value: fmtIDR(d.actual,false), accent:"var(--teal)", delta:null},
+    {label:"Est. Closing (Proyeksi)", value: fmtIDR(d.closing,false), accent:"var(--green)", delta: d.closing - d.target},
+    {label:"Achievement %", value: d.achPct.toFixed(2)+"%", accent: d.gapPct>=0?"var(--green)":"var(--red)", delta: d.gapPct},
+  ];
+  document.getElementById('kpiGrid').innerHTML = cards.map(c => `
+    <div class="kpi-card">
+      <div class="accent-bar" style="background:${c.accent}"></div>
+      <div class="kpi-label">${c.label}</div>
+      <div class="kpi-value">${c.value}</div>
+      ${c.delta!==null ? `<div class="kpi-delta ${c.delta>0?'up':c.delta<0?'down':'flat'}">${c.delta>0?'▲':c.delta<0?'▼':'—'} ${c.label==='Achievement %' ? pct(c.delta)+' gap MTD' : fmtIDR(Math.abs(c.delta),false)+ ' vs target'}</div>` : `<div class="kpi-delta flat">&nbsp;</div>`}
+    </div>
+  `).join('');
+}
+
+/* ============ NAV ============ */
+let openChannels = new Set();
+
+function renderNav(){
+  const wrap = document.getElementById('navChannels');
+  wrap.innerHTML = DATA.map((c, ci) => {
+    const isOpen = openChannels.has(ci);
+    const isActiveChannel = state.channel === c && !state.unit;
+    return `
+    <div class="nav-channel ${isOpen?'open':''} ${isActiveChannel?'active':''}" data-ci="${ci}">
+      <div class="nav-channel-head" data-action="channel" data-ci="${ci}">
+        <div class="nav-channel-name"><span class="chip" style="background:${c.color}"></span>${c.name}</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="nav-channel-gap ${c.total.gapPct>=0?'gap-up':'gap-down'}">${pct(c.total.gapPct)}</span>
+          <span class="caret" data-action="toggle" data-ci="${ci}">▶</span>
+        </div>
+      </div>
+      <div class="nav-units">
+        ${c.units.map((u,ui) => `
+          <div class="nav-unit ${state.unit===u?'active':''}" data-action="unit" data-ci="${ci}" data-ui="${ui}">
+            <span>${u.name}</span>
+            <span class="nav-unit-gap ${u.gapPct>=0?'gap-up':'gap-down'}">${pct(u.gapPct)}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('navAll').classList.toggle('active', !state.channel && !state.unit);
+
+  // bind events
+  wrap.querySelectorAll('[data-action="channel"]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      const ci = +el.dataset.ci;
+      if(e.target.dataset.action === 'toggle'){ 
+        openChannels.has(ci) ? openChannels.delete(ci) : openChannels.add(ci);
+      } else {
+        state.channel = DATA[ci]; state.unit = null;
+        openChannels.add(ci);
+      }
+      renderAll();
+    });
+  });
+  wrap.querySelectorAll('[data-action="unit"]').forEach(el=>{
+    el.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const ci = +el.dataset.ci, ui = +el.dataset.ui;
+      state.channel = DATA[ci];
+      state.unit = DATA[ci].units[ui];
+      openChannels.add(ci);
+      renderAll();
+    });
+  });
+}
+
+document.getElementById('navAll').addEventListener('click', ()=>{
+  state.channel = null; state.unit = null;
+  renderAll();
+});
+
+/* ============ CHART (dependency-free SVG) ============ */
+const COLOR_TARGET = '#FBBF24';
+const COLOR_ACTUAL = '#22D3EE';
+
+function niceMax(v){
+  if(v<=0) return 10;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  const norm = v/mag;
+  let step;
+  if(norm<=1) step=1; else if(norm<=2) step=2; else if(norm<=5) step=5; else step=10;
+  return step*mag;
+}
+
+function renderChart(){
+  const wrap = document.getElementById('chartWrap');
+  let labels, targetVals, actualVals, targetLabel, actualLabel;
+
+  if(state.unit){
+    labels = [state.unit.name];
+  } else if(state.channel){
+    labels = state.channel.units.map(u=>u.name);
+  } else {
+    labels = DATA.map(c=>c.name);
+  }
+
+  const getRow = (idx) => {
+    if(state.unit) return state.unit;
+    if(state.channel) return state.channel.units[idx];
+    return DATA[idx].total;
+  };
+  const n = labels.length;
+  const rows = Array.from({length:n}, (_,i)=>getRow(i));
+
+  if(state.mode === 'full'){
+    targetVals = rows.map(r=>r.target);
+    actualVals = rows.map(r=>r.closing);
+    targetLabel = "Target (Full Month)";
+    actualLabel = "Est. Closing (Proyeksi)";
+  } else {
+    targetVals = rows.map(r=>r.mtdTarget);
+    actualVals = rows.map(r=>r.actual);
+    targetLabel = "MTD Target";
+    actualLabel = "Est. Revenue (Aktual)";
+  }
+
+  document.getElementById('chartLegend').innerHTML = `
+    <span><i style="background:${COLOR_TARGET}"></i>${targetLabel}</span>
+    <span><i style="background:${COLOR_ACTUAL}"></i>${actualLabel}</span>
+  `;
+
+  // ---- geometry ----
+  const W = 900, H = 340;
+  const marginL = 78, marginR = 16, marginT = 16, marginB = 56;
+  const plotW = W - marginL - marginR;
+  const plotH = H - marginT - marginB;
+
+  const maxVal = niceMax(Math.max(...targetVals, ...actualVals, 1) * 1.12);
+  const yTicks = 5;
+  const scaleY = v => plotH - (v/maxVal)*plotH;
+
+  const groupW = plotW / n;
+  const barW = Math.min(46, groupW*0.32);
+  const barGap = 6;
+
+  let gridSVG = '';
+  for(let i=0;i<=yTicks;i++){
+    const val = maxVal * i/yTicks;
+    const y = marginT + scaleY(val);
+    gridSVG += `<line x1="${marginL}" y1="${y}" x2="${W-marginR}" y2="${y}" class="grid-line"/>`;
+    gridSVG += `<text x="${marginL-10}" y="${y+4}" text-anchor="end" class="axis-label" font-size="10.5">${fmtIDR(val)}</text>`;
+  }
+
+  let barsSVG = '';
+  let labelsSVG = '';
+  const tooltipData = [];
+
+  rows.forEach((r, i)=>{
+    const cx = marginL + groupW*i + groupW/2;
+    const tX = cx - barGap/2 - barW;
+    const aX = cx + barGap/2;
+
+    const tVal = targetVals[i], aVal = actualVals[i];
+    const tY = marginT + scaleY(tVal), aY = marginT + scaleY(aVal);
+    const tH = plotH - scaleY(tVal), aH = plotH - scaleY(aVal);
+
+    barsSVG += `
+      <g class="bargroup" data-idx="${i}">
+        <rect x="${tX}" y="${tY}" width="${barW}" height="${Math.max(tH,1)}" rx="5" fill="${COLOR_TARGET}" fill-opacity="0.9"></rect>
+        <rect x="${aX}" y="${aY}" width="${barW}" height="${Math.max(aH,1)}" rx="5" fill="${COLOR_ACTUAL}"></rect>
+      </g>`;
+
+    const label = labels[i].length > 14 ? labels[i].slice(0,13)+'…' : labels[i];
+    labelsSVG += `<text x="${cx}" y="${H-marginB+22}" text-anchor="middle" class="axis-label" font-size="11">${label}</text>`;
+
+    tooltipData.push({ name: labels[i], tVal, aVal, cx, top: Math.min(tY,aY) + marginT*0 });
+  });
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%; height:340px; display:block; overflow:visible;">
+      ${gridSVG}
+      ${barsSVG}
+      ${labelsSVG}
+      <line x1="${marginL}" y1="${marginT+plotH}" x2="${W-marginR}" y2="${marginT+plotH}" stroke="#20262F" stroke-width="1"/>
+    </svg>
+    <div class="chart-tooltip" id="chartTooltip"></div>
+  `;
+
+  const svgEl = wrap.querySelector('svg');
+  const tooltip = document.getElementById('chartTooltip');
+
+  wrap.querySelectorAll('.bargroup').forEach(g=>{
+    const idx = +g.dataset.idx;
+    const d = tooltipData[idx];
+    g.addEventListener('mousemove', (e)=>{
+      const rect = wrap.getBoundingClientRect();
+      const px = (d.cx / W) * rect.width;
+      tooltip.innerHTML = `
+        <div class="tt-title">${d.name}</div>
+        <div class="tt-row"><span style="color:${COLOR_TARGET}">${targetLabel}</span><b>&nbsp;${fmtIDR(d.tVal,false)}</b></div>
+        <div class="tt-row"><span style="color:${COLOR_ACTUAL}">${actualLabel}</span><b>&nbsp;${fmtIDR(d.aVal,false)}</b></div>
+      `;
+      tooltip.style.left = Math.min(Math.max(px-70,0), rect.width-160) + 'px';
+      tooltip.style.top = '4px';
+      tooltip.classList.add('show');
+    });
+    g.addEventListener('mouseleave', ()=> tooltip.classList.remove('show'));
+    g.addEventListener('click', ()=>{
+      // clicking a bar in "all channels" or "channel units" view drills down, mirroring nav
+      if(!state.channel){ state.channel = DATA[idx]; openChannels.add(idx); renderAll(); }
+      else if(!state.unit){ state.unit = state.channel.units[idx]; renderAll(); }
+    });
+  });
+}
+
+/* ============ TABLE ============ */
+function renderTable(){
+  const body = document.getElementById('tableBody');
+  let rows = [];
+  let totalRow = null;
+
+  if(state.unit){
+    rows = [state.unit];
+  } else if(state.channel){
+    rows = state.channel.units;
+    totalRow = {name: state.channel.name + " Total", ...state.channel.total};
+  } else {
+    rows = DATA.map(c => ({name:c.name, ...c.total}));
+    totalRow = {name:"Grand Total", ...GRAND};
+  }
+
+  const rowHTML = (r, isTotal=false) => `
+    <tr class="${isTotal?'total-row':''}">
+      <td>${r.name}</td>
+      <td>${fmtIDR(r.target,false)}</td>
+      <td>${fmtIDR(r.mtdTarget,false)}</td>
+      <td>${fmtIDR(r.actual,false)}</td>
+      <td>${fmtIDR(r.closing,false)}</td>
+      <td>${r.mtdPct.toFixed(2)}%</td>
+      <td>${r.achPct.toFixed(2)}%</td>
+      <td class="${gapClass(r.gapPct)}">${arrow(r.gapPct)} ${pct(r.gapPct)}</td>
+    </tr>`;
+
+  body.innerHTML = rows.map(r=>rowHTML(r)).join('') + (totalRow ? rowHTML(totalRow, true) : '');
+}
+
+/* ============ SCOPE HEADER ============ */
+function renderScopeHeader(){
+  const title = document.getElementById('scopeTitle');
+  const sub = document.getElementById('scopeSub');
+  if(state.unit){
+    title.textContent = state.unit.name;
+    sub.textContent = `Group Unit Business dalam ${state.channel.name} — Target vs ${state.mode==='full'?'Est. Closing':'Est. Revenue'}`;
+  } else if(state.channel){
+    title.textContent = state.channel.name;
+    sub.textContent = `Perbandingan Target vs Aktual per Group Unit Business`;
+  } else {
+    title.textContent = "Semua Channel";
+    sub.textContent = "Perbandingan Target vs Aktual per Group Channel";
+  }
+}
+
+/* ============ COMPARISON CARDS (MoM / QoQ / YoY) ============ */
+/** Ambil nilai "closing" untuk scope (grand/channel/unit) tertentu di sebuah periode. */
+function _closingForScope(period){
+  const p = periodsIndex[period];
+  if(!p) return null;
+  if(state.unit){
+    const ch = p.DATA.find(c => c.name === state.channel.name);
+    const u = ch && ch.units.find(u => u.name === state.unit.name);
+    return u ? u.closing : null;
+  }
+  if(state.channel){
+    const ch = p.DATA.find(c => c.name === state.channel.name);
+    return ch ? ch.total.closing : null;
+  }
+  return p.GRAND.closing;
+}
+function _sumClosingOverPeriods(periodsArr){
+  let total = 0, found = 0;
+  periodsArr.forEach(pr => { const v = _closingForScope(pr); if(v !== null){ total += v; found++; } });
+  return found > 0 ? { value: total, monthsFound: found, monthsWanted: periodsArr.length } : null;
+}
+function _growthPct(curr, prior){
+  if(prior === null || prior === undefined || prior === 0) return null;
+  return ((curr - prior) / prior) * 100;
+}
+
+function renderComparisons(){
+  const grid = document.getElementById('compareGrid');
+  const note = document.getElementById('compareNote');
+  note.textContent = comparisonsAreSynthetic
+    ? `* berbasis data historis contoh (demo) — hubungkan Google Sheet dengan kolom Period untuk data riwayat asli`
+    : `Periode berjalan: ${formatPeriodLabel(currentPeriod)}`;
+
+  const hasHistory = Object.keys(periodsIndex).length > 1;
+  if(!hasHistory){
+    grid.innerHTML = `<div class="compare-card" style="grid-column:1/-1;">
+      <div class="compare-detail">Data historis belum tersedia. Tambahkan kolom <b>Period</b> (format YYYY-MM) dan beberapa baris bulan sebelumnya di Google Sheet untuk mengaktifkan perbandingan MoM/QoQ/YoY.</div>
+    </div>`;
+    return;
+  }
+
+  const curr = _closingForScope(currentPeriod);
+
+  // MoM
+  const momPeriod = shiftMonth(currentPeriod, -1);
+  const momPrior = _closingForScope(momPeriod);
+  const momGrowth = _growthPct(curr, momPrior);
+
+  // YoY
+  const yoyPeriod = shiftMonth(currentPeriod, -12);
+  const yoyPrior = _closingForScope(yoyPeriod);
+  const yoyGrowth = _growthPct(curr, yoyPrior);
+
+  // QoQ (quarter-to-date vs periode sepadan di quarter sebelumnya)
+  const qtdMonths = quarterMonthsToDate(currentPeriod);
+  const qtdPriorMonths = priorQuarterMonthsToDate(currentPeriod);
+  const qtdCurr = _sumClosingOverPeriods(qtdMonths);
+  const qtdPrior = _sumClosingOverPeriods(qtdPriorMonths);
+  const qoqGrowth = (qtdCurr && qtdPrior) ? _growthPct(qtdCurr.value, qtdPrior.value) : null;
+
+  const cards = [
+    {
+      badge: "MoM", growth: momGrowth,
+      detail: momPrior !== null ? `${fmtIDR(curr,false)} vs ${fmtIDR(momPrior,false)}` : "Data bulan sebelumnya tidak tersedia",
+      vs: `vs ${formatPeriodLabel(momPeriod)}`,
+    },
+    {
+      badge: "QoQ", growth: qoqGrowth,
+      detail: (qtdCurr && qtdPrior) ? `${fmtIDR(qtdCurr.value,false)} vs ${fmtIDR(qtdPrior.value,false)}` : "Data quarter sebelumnya tidak lengkap",
+      vs: `QTD ${qtdMonths.length} bln vs Q sebelumnya`,
+    },
+    {
+      badge: "YoY", growth: yoyGrowth,
+      detail: yoyPrior !== null ? `${fmtIDR(curr,false)} vs ${fmtIDR(yoyPrior,false)}` : "Data periode setahun lalu tidak tersedia",
+      vs: `vs ${formatPeriodLabel(yoyPeriod)}`,
+    },
+  ];
+
+  grid.innerHTML = cards.map(c => `
+    <div class="compare-card">
+      <div class="compare-top">
+        <span class="compare-badge">${c.badge}</span>
+        <span class="compare-vs">${c.vs}</span>
+      </div>
+      <div class="compare-growth ${c.growth===null ? 'na' : (c.growth>=0?'up':'down')}">
+        ${c.growth===null ? 'N/A' : (c.growth>=0?'▲ ':'▼ ') + Math.abs(c.growth).toFixed(2) + '%'}
+      </div>
+      <div class="compare-detail">${c.detail}</div>
+    </div>
+  `).join('');
+}
+
+/* ============ MODE TOGGLE ============ */
+document.querySelectorAll('.toggle-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    state.mode = btn.dataset.mode;
+    renderChart();
+    renderScopeHeader();
+  });
+});
+
+/* ============ MASTER RENDER ============ */
+function renderAll(){
+  renderKPIs();
+  renderNav();
+  renderChart();
+  renderTable();
+  renderScopeHeader();
+  renderComparisons();
+}
+
+/* ============ DATA SOURCE BADGE ============ */
+function setDataSrcBadge(kind, text){
+  const badge = document.getElementById('dataSrcBadge');
+  badge.className = 'datasrc ' + kind;
+  document.getElementById('dataSrcText').textContent = text;
+}
+function updateHeaderCounts(){
+  const totalUnits = DATA.reduce((s,c)=>s+c.units.length, 0);
+  document.getElementById('headerSub').innerHTML =
+    `Target periode Jul-2026 &nbsp;·&nbsp; ${DATA.length} Group Channel / ${totalUnits} Group Unit Business`;
+}
+
+/* ============ LOAD FROM GOOGLE SHEET (dengan fallback ke sample) ============ */
+let autoRefreshTimer = null;
+
+async function loadData(isManualRefresh=false){
+  const btn = document.getElementById('refreshBtn');
+  btn.disabled = true;
+  setDataSrcBadge('loading', isManualRefresh ? 'Menyegarkan data...' : 'Memuat data...');
+
+  try {
+    const liveResult = await loadDashboardDataFromSheet(SHEET_CONFIG);
+    DATA = liveResult.DATA;
+    GRAND = liveResult.GRAND;
+    periodsIndex = liveResult.periodsIndex;
+    currentPeriod = liveResult.currentPeriod;
+    comparisonsAreSynthetic = false;
+    // reset seleksi kalau channel/unit yang lagi dipilih sudah tidak ada di data baru
+    if(state.channel && !DATA.includes(state.channel)){
+      const match = DATA.find(c => c.name === state.channel.name);
+      state.channel = match || null;
+      state.unit = null;
+    }
+    const now = new Date();
+    setDataSrcBadge('live', `Live dari Google Sheet · ${now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}`);
+    updateHeaderCounts();
+  } catch(e) {
+    DATA = SAMPLE_DATA;
+    GRAND = SAMPLE_GRAND;
+    periodsIndex = buildSyntheticPeriodsIndex();
+    currentPeriod = SAMPLE_CURRENT_PERIOD;
+    comparisonsAreSynthetic = true;
+    state.channel = null; state.unit = null;
+    setDataSrcBadge('error', 'Gagal ambil Google Sheet — pakai data contoh');
+    console.warn('[sheet-config] Fetch gagal, fallback ke data contoh:', e.message);
+    updateHeaderCounts();
+  }
+
+  buildTicker();
+  renderAll();
+  btn.disabled = false;
+}
+
+document.getElementById('refreshBtn').addEventListener('click', ()=> loadData(true));
+
+function setupAutoRefresh(){
+  if(autoRefreshTimer) clearInterval(autoRefreshTimer);
+  const mins = Number(SHEET_CONFIG.autoRefreshMinutes) || 0;
+  if(mins > 0){
+    autoRefreshTimer = setInterval(()=> loadData(false), mins*60*1000);
+  }
+}
+
+loadData(false).then(setupAutoRefresh);
+
+</script>
+</body>
+</html>
