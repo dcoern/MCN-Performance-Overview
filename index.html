@@ -118,7 +118,7 @@
 
   /* ---------- KPI grid ---------- */
   .kpis{
-    display:grid; grid-template-columns:repeat(5,1fr); gap:14px;
+    display:grid; grid-template-columns:repeat(6,1fr); gap:14px;
     padding:22px 32px; border-bottom:1px solid var(--line);
   }
   .kpi-card{
@@ -128,7 +128,7 @@
   .kpi-card:hover{ transform:translateY(-2px); border-color:#2b3340; }
   .kpi-card .accent-bar{ position:absolute; left:0; top:0; bottom:0; width:3px; }
   .kpi-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
-  .kpi-value{ font-family:'JetBrains Mono',monospace; font-size:21px; font-weight:600; color:var(--hi); }
+  .kpi-value{ font-family:'JetBrains Mono',monospace; font-size:clamp(14px, 1.7vw, 21px); font-weight:600; color:var(--hi); overflow-wrap:anywhere; }
   .kpi-value small{ font-size:12px; color:var(--muted); font-weight:400; margin-left:2px;}
   .kpi-delta{ font-size:12px; margin-top:8px; font-family:'JetBrains Mono',monospace; }
   .kpi-delta.up{ color:var(--green); } .kpi-delta.down{ color:var(--red); } .kpi-delta.flat{ color:var(--muted); }
@@ -141,8 +141,12 @@
   .compare-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
   .compare-card{
     background:var(--panel-2); border:1px solid var(--line); border-radius:14px; padding:16px 18px;
-    display:flex; flex-direction:column; gap:6px;
+    display:flex; flex-direction:column; gap:6px; cursor:pointer;
+    transition: border-color .15s ease, transform .15s ease, background .15s ease;
   }
+  .compare-card:hover{ border-color:#2b3340; transform:translateY(-1px); }
+  .compare-card.active{ border-color:var(--teal); background:rgba(34,211,238,0.06); box-shadow:0 0 0 1px rgba(34,211,238,0.25) inset; }
+  .compare-card.active .compare-badge{ background:var(--teal); color:#04222a; }
   .compare-top{ display:flex; justify-content:space-between; align-items:center; }
   .compare-badge{
     font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:0.06em;
@@ -155,7 +159,8 @@
   @media (max-width:1000px){ .compare-grid{ grid-template-columns:1fr; } }
 
   /* ---------- Layout ---------- */
-  .layout{ display:grid; grid-template-columns:290px 1fr; gap:0; min-height:calc(100vh - 260px); }
+  .layout{ display:grid; grid-template-columns:290px 1fr; gap:0; min-height:calc(100vh - 260px); min-width:0; }
+  .layout > *{ min-width:0; }
 
   /* Nav pane */
   aside.nav{
@@ -227,9 +232,9 @@
   .chart-tooltip .tt-row{ display:flex; justify-content:space-between; gap:16px; }
 
   .table-card{
-    background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow:hidden;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px; overflow-x:auto; overflow-y:hidden;
   }
-  table{ width:100%; border-collapse:collapse; font-size:13px; }
+  table{ width:100%; border-collapse:collapse; font-size:13px; min-width:640px; }
   thead th{
     text-align:right; padding:12px 16px; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em;
     color:var(--muted); border-bottom:1px solid var(--line); font-weight:600; background:var(--panel-2);
@@ -243,9 +248,22 @@
   tr.total-row td{ background:var(--panel-2); font-weight:700; color:var(--hi); }
 
   @media (max-width:1000px){
-    .kpis{ grid-template-columns:repeat(2,1fr); }
+    .kpis{ grid-template-columns:repeat(3,1fr); }
     .layout{ grid-template-columns:1fr; }
     aside.nav{ border-right:none; border-bottom:1px solid var(--line); }
+  }
+  @media (max-width:640px){
+    .kpis{ grid-template-columns:repeat(2,1fr); }
+    header.dash-header{ padding:20px 18px 16px; }
+    .kpis{ padding:16px 18px; }
+    .compare-section{ padding:4px 18px 18px; }
+    section.content{ padding:18px 18px 30px; }
+    .pace-chip{ min-width:0; width:100%; }
+  }
+  @media (max-width:420px){
+    .kpis{ grid-template-columns:1fr 1fr; }
+    .kpi-card{ padding:14px 14px; }
+    .compare-growth{ font-size:19px; }
   }
 </style>
 </head>
@@ -289,10 +307,10 @@
 
 <div class="layout">
   <aside class="nav" id="navPane">
-    <div class="nav-title">Group Unit Business</div>
+    <div class="nav-title">Group Unit Business &nbsp;·&nbsp; Growth <span id="navModeTag" style="color:var(--teal);">MoM</span></div>
     <div class="nav-all active" id="navAll">
       <span>Semua Channel</span>
-      <span class="nav-channel-gap up">+34.79%</span>
+      <span class="nav-channel-gap" id="navAllGap">+34.79%</span>
     </div>
     <div id="navChannels"></div>
   </aside>
@@ -334,7 +352,329 @@
   </section>
 </div>
 
-<script src="sheet-config.js"></script>
+<script>
+/* =========================================================================
+   Konten sheet-config.js DIGABUNG langsung di sini (inline) supaya file HTML
+   ini 100% MANDIRI — tidak lagi bergantung pada file eksternal manapun untuk
+   bisa tampil. Ini sengaja dibuat begini karena banyak tempat (preview di
+   chat, dikirim by email, dibuka tanpa folder pendukung) hanya membaca satu
+   file HTML ini saja, dan sebelumnya dashboard jadi blank total kalau
+   sheet-config.js tidak ikut ada di folder yang sama.
+
+   Kalau kamu mau menghubungkan ke Google Sheet: cukup edit langsung nilai
+   SHEET_CONFIG di bawah ini (di dalam file HTML ini), TIDAK PERLU lagi edit
+   file sheet-config.js terpisah. File sheet-config.js masih disertakan
+   sebagai referensi/dokumentasi saja.
+   ========================================================================= */
+
+/* =========================================================================
+   SHEET-CONFIG.JS
+   Menghubungkan dashboard ke Google Sheet (tanpa API key, tanpa backend).
+   Cara kerja: memakai endpoint publik Google Visualization ("gviz") yang bisa
+   dibaca langsung oleh browser selama sheet di-share "Anyone with the link".
+
+   ------------------------------------------------------------------------
+   LANGKAH SETUP (sekali saja)
+   ------------------------------------------------------------------------
+   1. Buka Google Sheet kamu (pakai template kolom di bawah / file
+      template-gsheet.csv yang sudah disediakan).
+   2. Klik "Share" -> ubah akses jadi "Anyone with the link" -> role "Viewer".
+      (Kalau tetap "Restricted", endpoint ini tidak akan bisa membaca datanya.)
+   3. Ambil SPREADSHEET_ID dari URL sheet:
+        https://docs.google.com/spreadsheets/d/  >>>SPREADSHEET_ID<<<  /edit
+   4. Isi SHEET_CONFIG.spreadsheetId di bawah ini dengan ID tersebut.
+   5. Isi SHEET_CONFIG.sheetName dengan nama tab sheet-nya (default "Sheet1").
+   6. Pastikan header kolom di baris pertama sheet PERSIS seperti daftar di
+      bawah (urutan kolom bebas, tapi nama header harus sama).
+   7. Pastikan kolom angka diformat sebagai NUMBER di Google Sheets, bukan Text.
+
+   ------------------------------------------------------------------------
+   TEMPLATE KOLOM (header wajib, urutan bebas)
+   ------------------------------------------------------------------------
+   Period | Group Channel | Group Unit Business | Target | MTD Target |
+   Estimated Revenue (IDR) | Estimated Closing (IDR)
+
+   Catatan penting soal kolom "Period" (BARU — untuk fitur MoM/QoQ/YoY):
+   - Format wajib: "YYYY-MM", contoh "2026-07" untuk Juli 2026.
+   - Satu baris = satu Group Unit Business PADA SATU PERIODE (bulan) tertentu.
+     Artinya kalau kamu punya 19 unit bisnis dan ingin simpan 13 bulan riwayat
+     (untuk YoY penuh), sheet akan berisi 19 x 13 = 247 baris. Ini normal.
+   - Dashboard otomatis mendeteksi periode TERBARU di sheet sebagai "periode
+     berjalan" (current period), lalu menghitung:
+       MoM = periode berjalan vs 1 bulan sebelumnya
+       QoQ = quarter-to-date berjalan vs periode yang sama di quarter sebelumnya
+       YoY = periode berjalan vs bulan yang sama tahun sebelumnya
+     berbasis metrik "Estimated Closing".
+   - Kalau kolom "Period" tidak ada / tidak diisi, dashboard tetap jalan
+     normal untuk tampilan utama, tapi kartu perbandingan MoM/QoQ/YoY akan
+     menampilkan "data historis belum tersedia" karena tidak ada bulan lain
+     untuk dibandingkan.
+   - Kalau mau paksa periode berjalan tertentu (bukan otomatis yang terbaru),
+     isi SHEET_CONFIG.currentPeriod di bawah, misal "2026-07".
+
+   Catatan lain (sama seperti sebelumnya):
+   - Baris "Total" per channel TIDAK perlu dibuat manual — dihitung otomatis.
+   - Kolom persentase (MTD %, Achievement %, Gap MTD %) juga dihitung otomatis:
+       MTD %        = Estimated Revenue / MTD Target        x 100
+       Achievement % = Estimated Revenue / Target             x 100
+       Gap MTD %     = MTD % - 100
+   ========================================================================= */
+
+const SHEET_CONFIG = {
+  // Wajib diisi: ID spreadsheet (lihat langkah 3 di atas)
+  spreadsheetId: "PASTE_SPREADSHEET_ID_DI_SINI",
+
+  // Nama tab/sheet yang berisi data. Kosongkan gid jika pakai ini.
+  sheetName: "Sheet1",
+
+  // Alternatif: gid tab (angka di URL setelah #gid=). Kosongkan ("") jika tidak dipakai.
+  gid: "",
+
+  // Auto-refresh data setiap sekian menit. Set 0 untuk mematikan auto-refresh.
+  autoRefreshMinutes: 5,
+
+  // Paksa periode berjalan tertentu, format "YYYY-MM". Kosongkan ("") untuk
+  // otomatis memakai periode terbaru yang ada di kolom Period.
+  currentPeriod: "",
+
+  // Nama-nama header kolom di sheet.
+  columns: {
+    period: "Period",
+    groupChannel: "Group Channel",
+    groupUnitBusiness: "Group Unit Business",
+    target: "Target",
+    mtdTarget: "MTD Target",
+    estimatedRevenue: "Estimated Revenue (IDR)",
+    estimatedClosing: "Estimated Closing (IDR)",
+  },
+
+  // Warna per Group Channel (siklus terus kalau channel di sheet lebih banyak).
+  channelColorPalette: ["#F87171", "#FBBF24", "#22D3EE", "#34D399", "#A78BFA", "#F472B6"],
+};
+
+/* =========================================================================
+   Tidak perlu diubah di bawah ini kecuali struktur sheet berubah drastis.
+   ========================================================================= */
+
+const REQUIRED_COLUMN_KEYS = [
+  "groupChannel", "groupUnitBusiness", "target", "mtdTarget",
+  "estimatedRevenue", "estimatedClosing",
+];
+
+function _normalizeHeader(str) {
+  return String(str || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function _toNumber(v) {
+  if (v === null || v === undefined || v === "") return 0;
+  if (typeof v === "number") return v;
+  const cleaned = String(v).replace(/[^0-9.\-]/g, "");
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? 0 : n;
+}
+
+function _buildSheetUrl(config) {
+  const base = `https://docs.google.com/spreadsheets/d/${config.spreadsheetId}/gviz/tq?tqx=out:json`;
+  if (config.gid !== undefined && config.gid !== null && String(config.gid).trim() !== "") {
+    return `${base}&gid=${encodeURIComponent(config.gid)}`;
+  }
+  return `${base}&sheet=${encodeURIComponent(config.sheetName || "Sheet1")}`;
+}
+
+/* ---------- Helper aritmatika periode "YYYY-MM" (dipakai juga oleh dashboard) ---------- */
+function parsePeriod(p) {
+  const [y, m] = String(p).split("-").map(Number);
+  return { y, m };
+}
+function periodKey(y, m) {
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+function shiftMonth(period, delta) {
+  let { y, m } = parsePeriod(period);
+  m += delta;
+  while (m < 1) { m += 12; y--; }
+  while (m > 12) { m -= 12; y++; }
+  return periodKey(y, m);
+}
+/** Bulan-bulan dari awal quarter s.d. periode ini (quarter-to-date). */
+function quarterMonthsToDate(period) {
+  const { y, m } = parsePeriod(period);
+  const qStartMonth = Math.floor((m - 1) / 3) * 3 + 1;
+  const months = [];
+  for (let mm = qStartMonth; mm <= m; mm++) months.push(periodKey(y, mm));
+  return months;
+}
+/** Bulan-bulan yang sepadan di quarter sebelumnya (jumlah bulan sama). */
+function priorQuarterMonthsToDate(period) {
+  return quarterMonthsToDate(period).map((p) => shiftMonth(p, -3));
+}
+const ID_MONTHS = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
+function formatPeriodLabel(period) {
+  const { y, m } = parsePeriod(period);
+  return `${ID_MONTHS[m - 1]} ${y}`;
+}
+
+/**
+ * Ambil data mentah dari Google Sheet -> array of row objects
+ * { period, groupChannel, groupUnitBusiness, target, mtdTarget, estimatedRevenue, estimatedClosing }
+ */
+async function fetchSheetRows(config = SHEET_CONFIG) {
+  if (!config.spreadsheetId || config.spreadsheetId.includes("PASTE_SPREADSHEET_ID")) {
+    throw new Error("SHEET_CONFIG.spreadsheetId belum diisi. Lihat komentar di sheet-config.js.");
+  }
+
+  const url = _buildSheetUrl(config);
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Gagal mengambil sheet (HTTP ${res.status}). Pastikan sheet di-share "Anyone with the link".`);
+  }
+
+  const text = await res.text();
+  const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/);
+  if (!match) {
+    throw new Error("Format respons Google Sheet tidak dikenali. Cek apakah spreadsheetId/sheetName benar dan sheet-nya publik.");
+  }
+
+  let json;
+  try {
+    json = JSON.parse(match[1]);
+  } catch (e) {
+    throw new Error("Gagal parse JSON dari Google Sheet: " + e.message);
+  }
+
+  if (json.status === "error") {
+    const msg = (json.errors && json.errors[0] && json.errors[0].detailed_message) || "Sheet/tab tidak ditemukan.";
+    throw new Error("Google Sheet error: " + msg);
+  }
+
+  const cols = json.table.cols.map((c) => _normalizeHeader(c.label));
+  const colIndex = {};
+  Object.entries(config.columns).forEach(([key, headerLabel]) => {
+    colIndex[key] = cols.indexOf(_normalizeHeader(headerLabel));
+  });
+
+  const missing = REQUIRED_COLUMN_KEYS.filter((key) => colIndex[key] === -1).map((key) => config.columns[key]);
+  if (missing.length) {
+    throw new Error("Kolom berikut tidak ditemukan di sheet: " + missing.join(", "));
+  }
+
+  const hasPeriodColumn = colIndex.period !== undefined && colIndex.period !== -1;
+
+  const rows = json.table.rows
+    .map((row) => {
+      const cell = (key) => (row.c[colIndex[key]] ? row.c[colIndex[key]].v : null);
+      const rawPeriod = hasPeriodColumn ? String(cell("period") || "").trim() : "";
+      return {
+        period: rawPeriod || (config.currentPeriod || "current"),
+        groupChannel: String(cell("groupChannel") || "").trim(),
+        groupUnitBusiness: String(cell("groupUnitBusiness") || "").trim(),
+        target: _toNumber(cell("target")),
+        mtdTarget: _toNumber(cell("mtdTarget")),
+        estimatedRevenue: _toNumber(cell("estimatedRevenue")),
+        estimatedClosing: _toNumber(cell("estimatedClosing")),
+      };
+    })
+    .filter((r) => r.groupChannel !== "" || r.groupUnitBusiness !== "");
+
+  if (!rows.length) {
+    throw new Error("Sheet berhasil dibuka tapi tidak ada baris data yang valid.");
+  }
+
+  return rows;
+}
+
+function _computePercents(target, mtdTarget, actual) {
+  const mtdPct = mtdTarget !== 0 ? (actual / mtdTarget) * 100 : 0;
+  const achPct = target !== 0 ? (actual / target) * 100 : 0;
+  const gapPct = mtdTarget !== 0 ? mtdPct - 100 : 0;
+  return { mtdPct, achPct, gapPct };
+}
+
+/**
+ * Ubah rows (SATU periode saja, sudah difilter) -> { DATA, GRAND } yang
+ * dipakai langsung oleh dashboard.
+ */
+function buildDashboardData(rows, config = SHEET_CONFIG) {
+  const channelOrder = [];
+  const channelMap = new Map();
+
+  rows.forEach((r) => {
+    if (!channelMap.has(r.groupChannel)) {
+      channelMap.set(r.groupChannel, []);
+      channelOrder.push(r.groupChannel);
+    }
+    const { mtdPct, achPct, gapPct } = _computePercents(r.target, r.mtdTarget, r.estimatedRevenue);
+    channelMap.get(r.groupChannel).push({
+      name: r.groupUnitBusiness,
+      target: r.target,
+      mtdTarget: r.mtdTarget,
+      actual: r.estimatedRevenue,
+      closing: r.estimatedClosing,
+      mtdPct, achPct, gapPct,
+    });
+  });
+
+  const sumUnits = (units, key) => units.reduce((s, u) => s + u[key], 0);
+
+  const DATA = channelOrder.map((name, i) => {
+    const units = channelMap.get(name);
+    const target = sumUnits(units, "target");
+    const mtdTarget = sumUnits(units, "mtdTarget");
+    const actual = sumUnits(units, "actual");
+    const closing = sumUnits(units, "closing");
+    const { mtdPct, achPct, gapPct } = _computePercents(target, mtdTarget, actual);
+    return {
+      name,
+      color: config.channelColorPalette[i % config.channelColorPalette.length],
+      total: { target, mtdTarget, actual, closing, mtdPct, achPct, gapPct },
+      units,
+    };
+  });
+
+  const grandTarget = DATA.reduce((s, c) => s + c.total.target, 0);
+  const grandMtdTarget = DATA.reduce((s, c) => s + c.total.mtdTarget, 0);
+  const grandActual = DATA.reduce((s, c) => s + c.total.actual, 0);
+  const grandClosing = DATA.reduce((s, c) => s + c.total.closing, 0);
+  const grandPct = _computePercents(grandTarget, grandMtdTarget, grandActual);
+
+  const GRAND = { target: grandTarget, mtdTarget: grandMtdTarget, actual: grandActual, closing: grandClosing, ...grandPct };
+
+  return { DATA, GRAND };
+}
+
+/**
+ * Kelompokkan rows multi-periode -> { periodsIndex, currentPeriod }
+ * periodsIndex[period] = { DATA, GRAND } (lihat buildDashboardData).
+ */
+function buildPeriodsIndex(rows, config = SHEET_CONFIG) {
+  const byPeriod = new Map();
+  rows.forEach((r) => {
+    if (!byPeriod.has(r.period)) byPeriod.set(r.period, []);
+    byPeriod.get(r.period).push(r);
+  });
+
+  const periodsIndex = {};
+  byPeriod.forEach((periodRows, period) => {
+    periodsIndex[period] = buildDashboardData(periodRows, config);
+  });
+
+  const allPeriods = Array.from(byPeriod.keys()).sort(); // "YYYY-MM" sorts correctly as string
+  const currentPeriod = (config.currentPeriod && periodsIndex[config.currentPeriod])
+    ? config.currentPeriod
+    : allPeriods[allPeriods.length - 1];
+
+  return { periodsIndex, currentPeriod, allPeriods };
+}
+
+/** Fungsi siap-pakai: fetch + transform + kelompokkan per periode sekaligus. */
+async function loadDashboardDataFromSheet(config = SHEET_CONFIG) {
+  const rows = await fetchSheetRows(config);
+  const { periodsIndex, currentPeriod, allPeriods } = buildPeriodsIndex(rows, config);
+  const current = periodsIndex[currentPeriod];
+  return { DATA: current.DATA, GRAND: current.GRAND, periodsIndex, currentPeriod, allPeriods };
+}
+
+</script>
 <script>
 /* ============ SAMPLE DATA (fallback jika Google Sheet belum di-setup / gagal diakses) ============ */
 const SAMPLE_DATA = [
@@ -446,7 +786,71 @@ const gapClass = n => n >= 0 ? "gap-up" : "gap-down";
 const arrow = n => n >= 0 ? "▲" : "▼";
 
 /* ============ STATE ============ */
-let state = { channel:null, unit:null, mode:'full' }; // mode: 'full' -> Target vs Est.Closing, 'mtd' -> MTD Target vs Est.Revenue
+let state = { channel:null, unit:null, mode:'full', compareMode:'mom' };
+// mode: 'full' -> Target vs Est.Closing, 'mtd' -> MTD Target vs Est.Revenue
+// compareMode: 'mom' | 'qoq' | 'yoy' -> lensa pertumbuhan yang dipakai KPI/NavPane/Chart
+
+const COMPARE_LABELS = { mom:"MoM", qoq:"QoQ", yoy:"YoY" };
+
+/** Ambil nilai "closing" untuk scope (channel/unit) tertentu di sebuah periode.
+ *  channelName=null -> Grand Total. unitName=null -> total channel tsb. */
+function _closingForScopeAt(period, channelName, unitName){
+  const p = periodsIndex[period];
+  if(!p) return null;
+  if(!channelName) return p.GRAND.closing;
+  const ch = p.DATA.find(c => c.name === channelName);
+  if(!ch) return null;
+  if(!unitName) return ch.total.closing;
+  const u = ch.units.find(u => u.name === unitName);
+  return u ? u.closing : null;
+}
+function _sumClosingOverPeriodsAt(periodsArr, channelName, unitName){
+  let total = 0, found = 0;
+  periodsArr.forEach(pr => { const v = _closingForScopeAt(pr, channelName, unitName); if(v !== null){ total += v; found++; } });
+  return found > 0 ? { value: total, monthsFound: found, monthsWanted: periodsArr.length } : null;
+}
+function _growthPct(curr, prior){
+  if(curr === null || prior === null || prior === undefined || prior === 0) return null;
+  return ((curr - prior) / prior) * 100;
+}
+
+/** Hitung growth untuk mode ('mom'|'qoq'|'yoy') pada scope channel/unit tertentu.
+ *  channelName=null -> Grand Total (Semua Channel). unitName=null -> total channel. */
+function computeComparison(mode, channelName, unitName){
+  const curr = _closingForScopeAt(currentPeriod, channelName, unitName);
+  if(mode === 'mom'){
+    const priorPeriod = shiftMonth(currentPeriod, -1);
+    const prior = _closingForScopeAt(priorPeriod, channelName, unitName);
+    return { curr, prior, growth:_growthPct(curr,prior), priorLabel:formatPeriodLabel(priorPeriod), vs:`vs ${formatPeriodLabel(priorPeriod)}` };
+  }
+  if(mode === 'yoy'){
+    const priorPeriod = shiftMonth(currentPeriod, -12);
+    const prior = _closingForScopeAt(priorPeriod, channelName, unitName);
+    return { curr, prior, growth:_growthPct(curr,prior), priorLabel:formatPeriodLabel(priorPeriod), vs:`vs ${formatPeriodLabel(priorPeriod)}` };
+  }
+  // qoq: quarter-to-date vs periode sepadan di quarter sebelumnya
+  const qtdMonths = quarterMonthsToDate(currentPeriod);
+  const qtdPriorMonths = priorQuarterMonthsToDate(currentPeriod);
+  const currAgg = _sumClosingOverPeriodsAt(qtdMonths, channelName, unitName);
+  const priorAgg = _sumClosingOverPeriodsAt(qtdPriorMonths, channelName, unitName);
+  const growth = (currAgg && priorAgg) ? _growthPct(currAgg.value, priorAgg.value) : null;
+  return {
+    curr: currAgg ? currAgg.value : null,
+    prior: priorAgg ? priorAgg.value : null,
+    growth,
+    priorLabel: `Quarter sebelumnya`,
+    vs: `QTD ${qtdMonths.length} bln vs Q sebelumnya`,
+  };
+}
+
+/** Ganti lensa pertumbuhan aktif (dipanggil dari klik kartu compare) tanpa reload data. */
+function setCompareMode(mode){
+  state.compareMode = mode;
+  renderKPIs();
+  renderNav();
+  renderChart();
+  renderComparisons();
+}
 
 /* ============ TICKER ============ */
 function buildTicker(){
@@ -470,19 +874,27 @@ function currentScope(){
 function renderKPIs(){
   const scope = currentScope();
   const d = scope.data;
+  const channelName = state.channel ? state.channel.name : null;
+  const unitName = state.unit ? state.unit.name : null;
+  const cmp = computeComparison(state.compareMode, channelName, unitName);
+  const cmpLabel = COMPARE_LABELS[state.compareMode];
+
   const cards = [
     {label:"Target (Full Month)", value: fmtIDR(d.target,false), accent:"var(--amber)", delta:null},
     {label:"MTD Target", value: fmtIDR(d.mtdTarget,false), accent:"var(--muted-2)", delta:null},
     {label:"Est. Revenue (Aktual)", value: fmtIDR(d.actual,false), accent:"var(--teal)", delta:null},
     {label:"Est. Closing (Proyeksi)", value: fmtIDR(d.closing,false), accent:"var(--green)", delta: d.closing - d.target},
     {label:"Achievement %", value: d.achPct.toFixed(2)+"%", accent: d.gapPct>=0?"var(--green)":"var(--red)", delta: d.gapPct},
+    {label:`Growth · ${cmpLabel}`, value: cmp.growth===null ? "N/A" : pct(cmp.growth), accent: cmp.growth===null?"var(--muted-2)":(cmp.growth>=0?"var(--green)":"var(--red)"), delta:null, isGrowth:true, cmp},
   ];
   document.getElementById('kpiGrid').innerHTML = cards.map(c => `
     <div class="kpi-card">
       <div class="accent-bar" style="background:${c.accent}"></div>
       <div class="kpi-label">${c.label}</div>
       <div class="kpi-value">${c.value}</div>
-      ${c.delta!==null ? `<div class="kpi-delta ${c.delta>0?'up':c.delta<0?'down':'flat'}">${c.delta>0?'▲':c.delta<0?'▼':'—'} ${c.label==='Achievement %' ? pct(c.delta)+' gap MTD' : fmtIDR(Math.abs(c.delta),false)+ ' vs target'}</div>` : `<div class="kpi-delta flat">&nbsp;</div>`}
+      ${c.isGrowth
+        ? `<div class="kpi-delta ${c.cmp.growth===null?'flat':(c.cmp.growth>=0?'up':'down')}">${c.cmp.prior!==null ? fmtIDR(c.cmp.curr,false)+' vs '+fmtIDR(c.cmp.prior,false) : 'Data pembanding tidak tersedia'}</div>`
+        : c.delta!==null ? `<div class="kpi-delta ${c.delta>0?'up':c.delta<0?'down':'flat'}">${c.delta>0?'▲':c.delta<0?'▼':'—'} ${c.label==='Achievement %' ? pct(c.delta)+' gap MTD' : fmtIDR(Math.abs(c.delta),false)+ ' vs target'}</div>` : `<div class="kpi-delta flat">&nbsp;</div>`}
     </div>
   `).join('');
 }
@@ -492,25 +904,40 @@ let openChannels = new Set();
 
 function renderNav(){
   const wrap = document.getElementById('navChannels');
+  document.getElementById('navModeTag').textContent = COMPARE_LABELS[state.compareMode];
+
+  const grandCmp = computeComparison(state.compareMode, null, null);
+  const grandGapEl = document.getElementById('navAllGap');
+  grandGapEl.textContent = grandCmp.growth===null ? 'N/A' : pct(grandCmp.growth);
+  grandGapEl.className = 'nav-channel-gap' + (grandCmp.growth===null ? '' : (grandCmp.growth>=0?' gap-up':' gap-down'));
+  grandGapEl.title = `Gap MTD: ${pct(GRAND.gapPct)}`;
+
   wrap.innerHTML = DATA.map((c, ci) => {
     const isOpen = openChannels.has(ci);
     const isActiveChannel = state.channel === c && !state.unit;
+    const chCmp = computeComparison(state.compareMode, c.name, null);
+    const chGrowthTxt = chCmp.growth===null ? 'N/A' : pct(chCmp.growth);
+    const chGrowthClass = chCmp.growth===null ? '' : (chCmp.growth>=0?'gap-up':'gap-down');
     return `
     <div class="nav-channel ${isOpen?'open':''} ${isActiveChannel?'active':''}" data-ci="${ci}">
       <div class="nav-channel-head" data-action="channel" data-ci="${ci}">
         <div class="nav-channel-name"><span class="chip" style="background:${c.color}"></span>${c.name}</div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="nav-channel-gap ${c.total.gapPct>=0?'gap-up':'gap-down'}">${pct(c.total.gapPct)}</span>
+          <span class="nav-channel-gap ${chGrowthClass}" title="Gap MTD: ${pct(c.total.gapPct)}">${chGrowthTxt}</span>
           <span class="caret" data-action="toggle" data-ci="${ci}">▶</span>
         </div>
       </div>
       <div class="nav-units">
-        ${c.units.map((u,ui) => `
+        ${c.units.map((u,ui) => {
+          const uCmp = computeComparison(state.compareMode, c.name, u.name);
+          const uGrowthTxt = uCmp.growth===null ? 'N/A' : pct(uCmp.growth);
+          const uGrowthClass = uCmp.growth===null ? '' : (uCmp.growth>=0?'gap-up':'gap-down');
+          return `
           <div class="nav-unit ${state.unit===u?'active':''}" data-action="unit" data-ci="${ci}" data-ui="${ui}">
             <span>${u.name}</span>
-            <span class="nav-unit-gap ${u.gapPct>=0?'gap-up':'gap-down'}">${pct(u.gapPct)}</span>
-          </div>
-        `).join('')}
+            <span class="nav-unit-gap ${uGrowthClass}" title="Gap MTD: ${pct(u.gapPct)}">${uGrowthTxt}</span>
+          </div>`;
+        }).join('')}
       </div>
     </div>`;
   }).join('');
@@ -560,16 +987,25 @@ function niceMax(v){
   return step*mag;
 }
 
+const COLOR_COMPARE = '#A78BFA';
+
 function renderChart(){
   const wrap = document.getElementById('chartWrap');
   let labels, targetVals, actualVals, targetLabel, actualLabel;
+  let rowChannelNames, rowUnitNames;
 
   if(state.unit){
     labels = [state.unit.name];
+    rowChannelNames = [state.channel.name];
+    rowUnitNames = [state.unit.name];
   } else if(state.channel){
     labels = state.channel.units.map(u=>u.name);
+    rowChannelNames = state.channel.units.map(()=>state.channel.name);
+    rowUnitNames = state.channel.units.map(u=>u.name);
   } else {
     labels = DATA.map(c=>c.name);
+    rowChannelNames = DATA.map(c=>c.name);
+    rowUnitNames = DATA.map(()=>null);
   }
 
   const getRow = (idx) => {
@@ -592,9 +1028,17 @@ function renderChart(){
     actualLabel = "Est. Revenue (Aktual)";
   }
 
+  // Bar ke-3: closing periode pembanding, mengikuti lensa MoM/QoQ/YoY yang aktif
+  const cmpLabel = COMPARE_LABELS[state.compareMode];
+  const compareLabel = `Est. Closing (Pembanding ${cmpLabel})`;
+  const compareRows = rowChannelNames.map((chName, i) => computeComparison(state.compareMode, chName, rowUnitNames[i]));
+  const compareVals = compareRows.map(c => c.prior);
+  const hasAnyCompare = compareVals.some(v => v !== null);
+
   document.getElementById('chartLegend').innerHTML = `
     <span><i style="background:${COLOR_TARGET}"></i>${targetLabel}</span>
     <span><i style="background:${COLOR_ACTUAL}"></i>${actualLabel}</span>
+    <span><i style="background:${COLOR_COMPARE}"></i>${compareLabel}</span>
   `;
 
   // ---- geometry ----
@@ -603,13 +1047,14 @@ function renderChart(){
   const plotW = W - marginL - marginR;
   const plotH = H - marginT - marginB;
 
-  const maxVal = niceMax(Math.max(...targetVals, ...actualVals, 1) * 1.12);
+  const allVals = [...targetVals, ...actualVals, ...compareVals.filter(v=>v!==null), 1];
+  const maxVal = niceMax(Math.max(...allVals) * 1.12);
   const yTicks = 5;
   const scaleY = v => plotH - (v/maxVal)*plotH;
 
   const groupW = plotW / n;
-  const barW = Math.min(46, groupW*0.32);
-  const barGap = 6;
+  const barW = Math.min(32, groupW*0.2);
+  const barGap = 5;
 
   let gridSVG = '';
   for(let i=0;i<=yTicks;i++){
@@ -622,26 +1067,36 @@ function renderChart(){
   let barsSVG = '';
   let labelsSVG = '';
   const tooltipData = [];
+  const groupTotalW = 3*barW + 2*barGap;
 
   rows.forEach((r, i)=>{
     const cx = marginL + groupW*i + groupW/2;
-    const tX = cx - barGap/2 - barW;
-    const aX = cx + barGap/2;
+    const startX = cx - groupTotalW/2;
+    const tX = startX;
+    const aX = startX + barW + barGap;
+    const cX = startX + 2*(barW + barGap);
 
-    const tVal = targetVals[i], aVal = actualVals[i];
+    const tVal = targetVals[i], aVal = actualVals[i], cVal = compareVals[i];
     const tY = marginT + scaleY(tVal), aY = marginT + scaleY(aVal);
     const tH = plotH - scaleY(tVal), aH = plotH - scaleY(aVal);
 
+    let compareBarSVG = '';
+    if(cVal !== null){
+      const cY = marginT + scaleY(cVal), cH = plotH - scaleY(cVal);
+      compareBarSVG = `<rect x="${cX}" y="${cY}" width="${barW}" height="${Math.max(cH,1)}" rx="4" fill="${COLOR_COMPARE}" fill-opacity="0.85"></rect>`;
+    }
+
     barsSVG += `
       <g class="bargroup" data-idx="${i}">
-        <rect x="${tX}" y="${tY}" width="${barW}" height="${Math.max(tH,1)}" rx="5" fill="${COLOR_TARGET}" fill-opacity="0.9"></rect>
-        <rect x="${aX}" y="${aY}" width="${barW}" height="${Math.max(aH,1)}" rx="5" fill="${COLOR_ACTUAL}"></rect>
+        <rect x="${tX}" y="${tY}" width="${barW}" height="${Math.max(tH,1)}" rx="4" fill="${COLOR_TARGET}" fill-opacity="0.9"></rect>
+        <rect x="${aX}" y="${aY}" width="${barW}" height="${Math.max(aH,1)}" rx="4" fill="${COLOR_ACTUAL}"></rect>
+        ${compareBarSVG}
       </g>`;
 
     const label = labels[i].length > 14 ? labels[i].slice(0,13)+'…' : labels[i];
     labelsSVG += `<text x="${cx}" y="${H-marginB+22}" text-anchor="middle" class="axis-label" font-size="11">${label}</text>`;
 
-    tooltipData.push({ name: labels[i], tVal, aVal, cx, top: Math.min(tY,aY) + marginT*0 });
+    tooltipData.push({ name: labels[i], tVal, aVal, cVal, cx });
   });
 
   wrap.innerHTML = `
@@ -654,7 +1109,6 @@ function renderChart(){
     <div class="chart-tooltip" id="chartTooltip"></div>
   `;
 
-  const svgEl = wrap.querySelector('svg');
   const tooltip = document.getElementById('chartTooltip');
 
   wrap.querySelectorAll('.bargroup').forEach(g=>{
@@ -667,8 +1121,9 @@ function renderChart(){
         <div class="tt-title">${d.name}</div>
         <div class="tt-row"><span style="color:${COLOR_TARGET}">${targetLabel}</span><b>&nbsp;${fmtIDR(d.tVal,false)}</b></div>
         <div class="tt-row"><span style="color:${COLOR_ACTUAL}">${actualLabel}</span><b>&nbsp;${fmtIDR(d.aVal,false)}</b></div>
+        ${d.cVal!==null ? `<div class="tt-row"><span style="color:${COLOR_COMPARE}">${compareLabel}</span><b>&nbsp;${fmtIDR(d.cVal,false)}</b></div>` : `<div class="tt-row"><span style="color:${COLOR_COMPARE}">${compareLabel}</span><b>&nbsp;N/A</b></div>`}
       `;
-      tooltip.style.left = Math.min(Math.max(px-70,0), rect.width-160) + 'px';
+      tooltip.style.left = Math.min(Math.max(px-70,0), rect.width-170) + 'px';
       tooltip.style.top = '4px';
       tooltip.classList.add('show');
     });
@@ -728,32 +1183,7 @@ function renderScopeHeader(){
   }
 }
 
-/* ============ COMPARISON CARDS (MoM / QoQ / YoY) ============ */
-/** Ambil nilai "closing" untuk scope (grand/channel/unit) tertentu di sebuah periode. */
-function _closingForScope(period){
-  const p = periodsIndex[period];
-  if(!p) return null;
-  if(state.unit){
-    const ch = p.DATA.find(c => c.name === state.channel.name);
-    const u = ch && ch.units.find(u => u.name === state.unit.name);
-    return u ? u.closing : null;
-  }
-  if(state.channel){
-    const ch = p.DATA.find(c => c.name === state.channel.name);
-    return ch ? ch.total.closing : null;
-  }
-  return p.GRAND.closing;
-}
-function _sumClosingOverPeriods(periodsArr){
-  let total = 0, found = 0;
-  periodsArr.forEach(pr => { const v = _closingForScope(pr); if(v !== null){ total += v; found++; } });
-  return found > 0 ? { value: total, monthsFound: found, monthsWanted: periodsArr.length } : null;
-}
-function _growthPct(curr, prior){
-  if(prior === null || prior === undefined || prior === 0) return null;
-  return ((curr - prior) / prior) * 100;
-}
-
+/* ============ COMPARISON CARDS (MoM / QoQ / YoY) — sekarang bisa dipilih ============ */
 function renderComparisons(){
   const grid = document.getElementById('compareGrid');
   const note = document.getElementById('compareNote');
@@ -763,51 +1193,25 @@ function renderComparisons(){
 
   const hasHistory = Object.keys(periodsIndex).length > 1;
   if(!hasHistory){
-    grid.innerHTML = `<div class="compare-card" style="grid-column:1/-1;">
+    grid.innerHTML = `<div class="compare-card" style="grid-column:1/-1; cursor:default;">
       <div class="compare-detail">Data historis belum tersedia. Tambahkan kolom <b>Period</b> (format YYYY-MM) dan beberapa baris bulan sebelumnya di Google Sheet untuk mengaktifkan perbandingan MoM/QoQ/YoY.</div>
     </div>`;
     return;
   }
 
-  const curr = _closingForScope(currentPeriod);
+  const channelName = state.channel ? state.channel.name : null;
+  const unitName = state.unit ? state.unit.name : null;
 
-  // MoM
-  const momPeriod = shiftMonth(currentPeriod, -1);
-  const momPrior = _closingForScope(momPeriod);
-  const momGrowth = _growthPct(curr, momPrior);
-
-  // YoY
-  const yoyPeriod = shiftMonth(currentPeriod, -12);
-  const yoyPrior = _closingForScope(yoyPeriod);
-  const yoyGrowth = _growthPct(curr, yoyPrior);
-
-  // QoQ (quarter-to-date vs periode sepadan di quarter sebelumnya)
-  const qtdMonths = quarterMonthsToDate(currentPeriod);
-  const qtdPriorMonths = priorQuarterMonthsToDate(currentPeriod);
-  const qtdCurr = _sumClosingOverPeriods(qtdMonths);
-  const qtdPrior = _sumClosingOverPeriods(qtdPriorMonths);
-  const qoqGrowth = (qtdCurr && qtdPrior) ? _growthPct(qtdCurr.value, qtdPrior.value) : null;
-
-  const cards = [
-    {
-      badge: "MoM", growth: momGrowth,
-      detail: momPrior !== null ? `${fmtIDR(curr,false)} vs ${fmtIDR(momPrior,false)}` : "Data bulan sebelumnya tidak tersedia",
-      vs: `vs ${formatPeriodLabel(momPeriod)}`,
-    },
-    {
-      badge: "QoQ", growth: qoqGrowth,
-      detail: (qtdCurr && qtdPrior) ? `${fmtIDR(qtdCurr.value,false)} vs ${fmtIDR(qtdPrior.value,false)}` : "Data quarter sebelumnya tidak lengkap",
-      vs: `QTD ${qtdMonths.length} bln vs Q sebelumnya`,
-    },
-    {
-      badge: "YoY", growth: yoyGrowth,
-      detail: yoyPrior !== null ? `${fmtIDR(curr,false)} vs ${fmtIDR(yoyPrior,false)}` : "Data periode setahun lalu tidak tersedia",
-      vs: `vs ${formatPeriodLabel(yoyPeriod)}`,
-    },
-  ];
+  const cards = ['mom','qoq','yoy'].map(mode => {
+    const c = computeComparison(mode, channelName, unitName);
+    const detail = (c.prior !== null)
+      ? `${fmtIDR(c.curr,false)} vs ${fmtIDR(c.prior,false)}`
+      : `Data pembanding (${mode==='qoq'?'quarter':'periode'} terkait) tidak tersedia`;
+    return { mode, badge: COMPARE_LABELS[mode], growth: c.growth, detail, vs: c.vs };
+  });
 
   grid.innerHTML = cards.map(c => `
-    <div class="compare-card">
+    <div class="compare-card ${state.compareMode===c.mode ? 'active' : ''}" data-mode="${c.mode}" title="Klik untuk jadikan lensa pertumbuhan aktif di KPI, NavPane, dan Chart">
       <div class="compare-top">
         <span class="compare-badge">${c.badge}</span>
         <span class="compare-vs">${c.vs}</span>
@@ -818,6 +1222,10 @@ function renderComparisons(){
       <div class="compare-detail">${c.detail}</div>
     </div>
   `).join('');
+
+  grid.querySelectorAll('.compare-card[data-mode]').forEach(el=>{
+    el.addEventListener('click', ()=> setCompareMode(el.dataset.mode));
+  });
 }
 
 /* ============ MODE TOGGLE ============ */
@@ -878,21 +1286,48 @@ async function loadData(isManualRefresh=false){
     setDataSrcBadge('live', `Live dari Google Sheet · ${now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}`);
     updateHeaderCounts();
   } catch(e) {
-    DATA = SAMPLE_DATA;
-    GRAND = SAMPLE_GRAND;
-    periodsIndex = buildSyntheticPeriodsIndex();
-    currentPeriod = SAMPLE_CURRENT_PERIOD;
+    console.warn('[sheet-config] Fetch gagal, fallback ke data contoh:', e.message);
+    // Fallback berlapis: kalau bahkan pembuatan data contoh ini gagal (mis. karena
+    // sheet-config.js gagal ter-load), JANGAN biarkan itu menghentikan render —
+    // turun lagi ke data contoh paling dasar tanpa riwayat periode.
+    try {
+      DATA = SAMPLE_DATA;
+      GRAND = SAMPLE_GRAND;
+      periodsIndex = buildSyntheticPeriodsIndex();
+      currentPeriod = SAMPLE_CURRENT_PERIOD;
+    } catch(e2){
+      console.warn('[fallback] Gagal bangun data historis contoh:', e2.message);
+      DATA = SAMPLE_DATA;
+      GRAND = SAMPLE_GRAND;
+      periodsIndex = { [SAMPLE_CURRENT_PERIOD]: { DATA: SAMPLE_DATA, GRAND: SAMPLE_GRAND } };
+      currentPeriod = SAMPLE_CURRENT_PERIOD;
+    }
     comparisonsAreSynthetic = true;
     state.channel = null; state.unit = null;
     setDataSrcBadge('error', 'Gagal ambil Google Sheet — pakai data contoh');
-    console.warn('[sheet-config] Fetch gagal, fallback ke data contoh:', e.message);
     updateHeaderCounts();
   }
 
-  buildTicker();
-  renderAll();
+  try {
+    buildTicker();
+    renderAll();
+  } catch(e3){
+    console.error('[render] Gagal render dashboard:', e3);
+    showFatalError(e3);
+  }
   btn.disabled = false;
 }
+
+/** Tampilkan pesan error yang JELAS TERLIHAT di halaman (bukan blank/diam saja)
+ *  kalau ada kegagalan tak terduga saat render, supaya mudah dilaporkan/didiagnosis. */
+function showFatalError(err){
+  const box = document.createElement('div');
+  box.style.cssText = 'margin:16px 32px; padding:14px 18px; border-radius:10px; background:rgba(248,113,113,0.1); border:1px solid #F87171; color:#F87171; font-family:JetBrains Mono, monospace; font-size:12.5px; white-space:pre-wrap;';
+  box.textContent = 'Terjadi error saat menampilkan dashboard: ' + (err && err.message ? err.message : String(err)) + '\n\nCoba refresh halaman. Kalau tetap muncul, screenshot pesan ini untuk dilaporkan.';
+  document.body.insertBefore(box, document.body.firstChild);
+}
+window.addEventListener('error', (e)=>{ console.error('[window.onerror]', e.error || e.message); });
+window.addEventListener('unhandledrejection', (e)=>{ console.error('[unhandledrejection]', e.reason); });
 
 document.getElementById('refreshBtn').addEventListener('click', ()=> loadData(true));
 
@@ -904,7 +1339,7 @@ function setupAutoRefresh(){
   }
 }
 
-loadData(false).then(setupAutoRefresh);
+loadData(false).then(setupAutoRefresh).catch(e => { console.error('[bootstrap] fatal:', e); showFatalError(e); });
 
 </script>
 </body>
