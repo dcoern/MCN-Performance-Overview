@@ -118,12 +118,12 @@
 
   /* ---------- KPI grid ---------- */
   .kpis{
-    display:grid; grid-template-columns:repeat(6,1fr); gap:14px;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:14px;
     padding:22px 32px; border-bottom:1px solid var(--line);
   }
   .kpi-card{
     background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 18px;
-    position:relative; overflow:hidden; transition:transform .15s ease, border-color .15s ease;
+    position:relative; overflow:hidden; transition:transform .15s ease, border-color .15s ease; min-width:0;
   }
   .kpi-card:hover{ transform:translateY(-2px); border-color:#2b3340; }
   .kpi-card .accent-bar{ position:absolute; left:0; top:0; bottom:0; width:3px; }
@@ -133,30 +133,28 @@
   .kpi-delta{ font-size:12px; margin-top:8px; font-family:'JetBrains Mono',monospace; }
   .kpi-delta.up{ color:var(--green); } .kpi-delta.down{ color:var(--red); } .kpi-delta.flat{ color:var(--muted); }
 
-  /* ---------- Period comparison cards (MoM/QoQ/YoY) ---------- */
-  .compare-section{ padding:4px 32px 22px; border-bottom:1px solid var(--line); }
-  .compare-head{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:6px; }
-  .compare-head .compare-title{ font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:600; }
-  .compare-head .compare-note{ font-size:11px; color:var(--muted-2); font-family:'JetBrains Mono',monospace; }
-  .compare-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
-  .compare-card{
-    background:var(--panel-2); border:1px solid var(--line); border-radius:14px; padding:16px 18px;
-    display:flex; flex-direction:column; gap:6px; cursor:pointer;
-    transition: border-color .15s ease, transform .15s ease, background .15s ease;
+  /* ---------- Compact period-comparison selector (lives in nav pane) ---------- */
+  .period-select-wrap{ padding:0 10px 4px; }
+  .period-select{
+    width:100%; background:var(--panel-2); color:var(--hi); border:1px solid var(--line); border-radius:9px;
+    padding:9px 30px 9px 12px; font-family:'JetBrains Mono',monospace; font-size:13px; cursor:pointer;
+    appearance:none; -webkit-appearance:none; -moz-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0L5 6L10 0Z' fill='%237C8697'/></svg>");
+    background-repeat:no-repeat; background-position:right 12px center;
   }
-  .compare-card:hover{ border-color:#2b3340; transform:translateY(-1px); }
-  .compare-card.active{ border-color:var(--teal); background:rgba(34,211,238,0.06); box-shadow:0 0 0 1px rgba(34,211,238,0.25) inset; }
-  .compare-card.active .compare-badge{ background:var(--teal); color:#04222a; }
-  .compare-top{ display:flex; justify-content:space-between; align-items:center; }
-  .compare-badge{
-    font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:0.06em;
-    padding:3px 8px; border-radius:6px; background:rgba(255,255,255,0.06); color:var(--muted);
+  .period-select:hover{ border-color:#2b3340; }
+  .period-select:focus{ outline:none; border-color:var(--teal); }
+  .period-select option{ background:var(--panel-2); color:var(--hi); }
+  .period-hint{ font-size:11px; color:var(--muted-2); padding:6px 10px 14px; line-height:1.5; }
+  .nav-compare-item{
+    display:flex; justify-content:space-between; align-items:center;
+    padding:9px 12px; border-radius:9px; cursor:pointer; margin-bottom:3px; font-size:13px;
+    border:1px solid transparent; transition: background .12s ease, border-color .12s ease;
   }
-  .compare-growth{ font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; }
-  .compare-growth.up{ color:var(--green); } .compare-growth.down{ color:var(--red); } .compare-growth.na{ color:var(--muted-2); font-size:14px; }
-  .compare-detail{ font-size:11.5px; color:var(--muted); font-family:'JetBrains Mono',monospace; }
-  .compare-vs{ font-size:11px; color:var(--muted-2); }
-  @media (max-width:1000px){ .compare-grid{ grid-template-columns:1fr; } }
+  .nav-compare-item:hover{ background:rgba(255,255,255,0.03); }
+  .nav-compare-item.active{ background:rgba(34,211,238,0.09); border-color:rgba(34,211,238,0.35); font-weight:600; }
+  .nav-compare-value{ font-family:'JetBrains Mono',monospace; font-size:12px; }
+  .compare-empty-note{ font-size:11px; color:var(--muted-2); padding:2px 12px 10px; line-height:1.5; }
 
   /* ---------- Layout ---------- */
   .layout{ display:grid; grid-template-columns:290px 1fr; gap:0; min-height:calc(100vh - 260px); min-width:0; }
@@ -248,22 +246,17 @@
   tr.total-row td{ background:var(--panel-2); font-weight:700; color:var(--hi); }
 
   @media (max-width:1000px){
-    .kpis{ grid-template-columns:repeat(3,1fr); }
     .layout{ grid-template-columns:1fr; }
     aside.nav{ border-right:none; border-bottom:1px solid var(--line); }
   }
   @media (max-width:640px){
-    .kpis{ grid-template-columns:repeat(2,1fr); }
     header.dash-header{ padding:20px 18px 16px; }
     .kpis{ padding:16px 18px; }
-    .compare-section{ padding:4px 18px 18px; }
     section.content{ padding:18px 18px 30px; }
     .pace-chip{ min-width:0; width:100%; }
   }
   @media (max-width:420px){
-    .kpis{ grid-template-columns:1fr 1fr; }
     .kpi-card{ padding:14px 14px; }
-    .compare-growth{ font-size:19px; }
   }
 </style>
 </head>
@@ -276,7 +269,7 @@
 <header class="dash-header">
   <div>
     <div class="brand-eyebrow"><span class="live-dot"></span> MNC GROUP · REVENUE COMMAND</div>
-    <h1>Pantauan Pendapatan — Juli 2026</h1>
+    <h1 id="dashTitle">Pantauan Pendapatan — Juli 2026</h1>
     <div class="sub" id="headerSub">Target periode Jul-2026 &nbsp;·&nbsp; Aktual per 17-Jul-2026 &nbsp;·&nbsp; 5 Group Channel / 19 Group Unit Business</div>
     <div style="margin-top:10px; display:flex; align-items:center;">
       <span class="datasrc loading" id="dataSrcBadge"><span class="dot"></span><span id="dataSrcText">Memuat data...</span></span>
@@ -284,11 +277,13 @@
     </div>
   </div>
   <div class="pace-chip">
-    <div class="pace-row"><span>Progress bulan</span><span id="paceElapsed">54.8%</span></div>
-    <div class="pace-bar"><i class="elapsed" style="width:54.8%"></i></div>
+    <div id="paceElapsedRow">
+      <div class="pace-row"><span>Progress bulan</span><span id="paceElapsed">54.8%</span></div>
+      <div class="pace-bar"><i class="elapsed" style="width:54.8%"></i></div>
+    </div>
     <div class="pace-row" style="margin-top:10px;"><span>Achievement vs Target</span><span id="paceAch">73.92%</span></div>
     <div class="pace-bar"><i class="ach" style="width:73.92%"></i></div>
-    <div class="pace-legend">
+    <div class="pace-legend" id="paceLegend">
       <span><i class="dot" style="background:var(--muted-2)"></i>Hari ke-17 dari 31</span>
       <span><i class="dot" style="background:var(--green)"></i>Ahead of pace</span>
     </div>
@@ -297,17 +292,18 @@
 
 <section class="kpis" id="kpiGrid"></section>
 
-<section class="compare-section">
-  <div class="compare-head">
-    <span class="compare-title">Perbandingan Periode · Estimated Closing</span>
-    <span class="compare-note" id="compareNote"></span>
-  </div>
-  <div class="compare-grid" id="compareGrid"></div>
-</section>
-
 <div class="layout">
   <aside class="nav" id="navPane">
-    <div class="nav-title">Group Unit Business &nbsp;·&nbsp; Growth <span id="navModeTag" style="color:var(--teal);">MoM</span></div>
+    <div class="nav-title">Periode</div>
+    <div class="period-select-wrap">
+      <select id="periodSelect" class="period-select"></select>
+    </div>
+    <div class="period-hint" id="periodHint"></div>
+
+    <div class="nav-title" style="margin-top:6px;">Perbandingan Periode</div>
+    <div id="navCompareList"></div>
+
+    <div class="nav-title" style="margin-top:20px;">Group Unit Business</div>
     <div class="nav-all active" id="navAll">
       <span>Semua Channel</span>
       <span class="nav-channel-gap" id="navAllGap">+34.79%</span>
@@ -731,6 +727,7 @@ let GRAND = SAMPLE_GRAND;
    MoM/QoQ/YoY. Diisi ulang saat data live berhasil dimuat (lihat loadData). */
 let periodsIndex = {};
 let currentPeriod = SAMPLE_CURRENT_PERIOD;
+let latestActualPeriod = SAMPLE_CURRENT_PERIOD; // periode "sungguhan" terbaru (beda dari currentPeriod kalau user sedang lihat bulan/tahun lain)
 let comparisonsAreSynthetic = true; // true = kartu MoM/QoQ/YoY memakai data demo, bukan sheet asli
 
 /** Hash string -> [0,1), dipakai supaya data historis contoh konsisten
@@ -786,11 +783,11 @@ const gapClass = n => n >= 0 ? "gap-up" : "gap-down";
 const arrow = n => n >= 0 ? "▲" : "▼";
 
 /* ============ STATE ============ */
-let state = { channel:null, unit:null, mode:'full', compareMode:'mom' };
+let state = { channel:null, unit:null, mode:'full', compareMode:'all' };
 // mode: 'full' -> Target vs Est.Closing, 'mtd' -> MTD Target vs Est.Revenue
-// compareMode: 'mom' | 'qoq' | 'yoy' -> lensa pertumbuhan yang dipakai KPI/NavPane/Chart
+// compareMode: 'all' | 'mom' | 'qoq' | 'yoy' -> lensa pertumbuhan yang dipakai KPI/NavPane/Chart ('all' = tidak ada lensa, tampilan default)
 
-const COMPARE_LABELS = { mom:"MoM", qoq:"QoQ", yoy:"YoY" };
+const COMPARE_LABELS = { all:"Semua", mom:"MoM", qoq:"QoQ", yoy:"YoY" };
 
 /** Ambil nilai "closing" untuk scope (channel/unit) tertentu di sebuah periode.
  *  channelName=null -> Grand Total. unitName=null -> total channel tsb. */
@@ -849,7 +846,7 @@ function setCompareMode(mode){
   renderKPIs();
   renderNav();
   renderChart();
-  renderComparisons();
+  renderCompareNav();
 }
 
 /* ============ TICKER ============ */
@@ -876,8 +873,6 @@ function renderKPIs(){
   const d = scope.data;
   const channelName = state.channel ? state.channel.name : null;
   const unitName = state.unit ? state.unit.name : null;
-  const cmp = computeComparison(state.compareMode, channelName, unitName);
-  const cmpLabel = COMPARE_LABELS[state.compareMode];
 
   const cards = [
     {label:"Target (Full Month)", value: fmtIDR(d.target,false), accent:"var(--amber)", delta:null},
@@ -885,8 +880,14 @@ function renderKPIs(){
     {label:"Est. Revenue (Aktual)", value: fmtIDR(d.actual,false), accent:"var(--teal)", delta:null},
     {label:"Est. Closing (Proyeksi)", value: fmtIDR(d.closing,false), accent:"var(--green)", delta: d.closing - d.target},
     {label:"Achievement %", value: d.achPct.toFixed(2)+"%", accent: d.gapPct>=0?"var(--green)":"var(--red)", delta: d.gapPct},
-    {label:`Growth · ${cmpLabel}`, value: cmp.growth===null ? "N/A" : pct(cmp.growth), accent: cmp.growth===null?"var(--muted-2)":(cmp.growth>=0?"var(--green)":"var(--red)"), delta:null, isGrowth:true, cmp},
   ];
+
+  if(state.compareMode !== 'all'){
+    const cmp = computeComparison(state.compareMode, channelName, unitName);
+    const cmpLabel = COMPARE_LABELS[state.compareMode];
+    cards.push({label:`Growth · ${cmpLabel}`, value: cmp.growth===null ? "N/A" : pct(cmp.growth), accent: cmp.growth===null?"var(--muted-2)":(cmp.growth>=0?"var(--green)":"var(--red)"), delta:null, isGrowth:true, cmp});
+  }
+
   document.getElementById('kpiGrid').innerHTML = cards.map(c => `
     <div class="kpi-card">
       <div class="accent-bar" style="background:${c.accent}"></div>
@@ -904,38 +905,58 @@ let openChannels = new Set();
 
 function renderNav(){
   const wrap = document.getElementById('navChannels');
-  document.getElementById('navModeTag').textContent = COMPARE_LABELS[state.compareMode];
+  const isAll = state.compareMode === 'all';
 
-  const grandCmp = computeComparison(state.compareMode, null, null);
   const grandGapEl = document.getElementById('navAllGap');
-  grandGapEl.textContent = grandCmp.growth===null ? 'N/A' : pct(grandCmp.growth);
-  grandGapEl.className = 'nav-channel-gap' + (grandCmp.growth===null ? '' : (grandCmp.growth>=0?' gap-up':' gap-down'));
-  grandGapEl.title = `Gap MTD: ${pct(GRAND.gapPct)}`;
+  if(isAll){
+    grandGapEl.textContent = pct(GRAND.gapPct);
+    grandGapEl.className = 'nav-channel-gap' + (GRAND.gapPct>=0?' gap-up':' gap-down');
+    grandGapEl.title = 'Gap MTD vs Target';
+  } else {
+    const grandCmp = computeComparison(state.compareMode, null, null);
+    grandGapEl.textContent = grandCmp.growth===null ? 'N/A' : pct(grandCmp.growth);
+    grandGapEl.className = 'nav-channel-gap' + (grandCmp.growth===null ? '' : (grandCmp.growth>=0?' gap-up':' gap-down'));
+    grandGapEl.title = `${COMPARE_LABELS[state.compareMode]} · Gap MTD: ${pct(GRAND.gapPct)}`;
+  }
 
   wrap.innerHTML = DATA.map((c, ci) => {
     const isOpen = openChannels.has(ci);
     const isActiveChannel = state.channel === c && !state.unit;
-    const chCmp = computeComparison(state.compareMode, c.name, null);
-    const chGrowthTxt = chCmp.growth===null ? 'N/A' : pct(chCmp.growth);
-    const chGrowthClass = chCmp.growth===null ? '' : (chCmp.growth>=0?'gap-up':'gap-down');
+
+    let chGrowthTxt, chGrowthClass, chTitle;
+    if(isAll){
+      chGrowthTxt = pct(c.total.gapPct); chGrowthClass = c.total.gapPct>=0?'gap-up':'gap-down'; chTitle = 'Gap MTD vs Target';
+    } else {
+      const chCmp = computeComparison(state.compareMode, c.name, null);
+      chGrowthTxt = chCmp.growth===null ? 'N/A' : pct(chCmp.growth);
+      chGrowthClass = chCmp.growth===null ? '' : (chCmp.growth>=0?'gap-up':'gap-down');
+      chTitle = `${COMPARE_LABELS[state.compareMode]} · Gap MTD: ${pct(c.total.gapPct)}`;
+    }
+
     return `
     <div class="nav-channel ${isOpen?'open':''} ${isActiveChannel?'active':''}" data-ci="${ci}">
       <div class="nav-channel-head" data-action="channel" data-ci="${ci}">
         <div class="nav-channel-name"><span class="chip" style="background:${c.color}"></span>${c.name}</div>
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="nav-channel-gap ${chGrowthClass}" title="Gap MTD: ${pct(c.total.gapPct)}">${chGrowthTxt}</span>
+          <span class="nav-channel-gap ${chGrowthClass}" title="${chTitle}">${chGrowthTxt}</span>
           <span class="caret" data-action="toggle" data-ci="${ci}">▶</span>
         </div>
       </div>
       <div class="nav-units">
         ${c.units.map((u,ui) => {
-          const uCmp = computeComparison(state.compareMode, c.name, u.name);
-          const uGrowthTxt = uCmp.growth===null ? 'N/A' : pct(uCmp.growth);
-          const uGrowthClass = uCmp.growth===null ? '' : (uCmp.growth>=0?'gap-up':'gap-down');
+          let uGrowthTxt, uGrowthClass, uTitle;
+          if(isAll){
+            uGrowthTxt = pct(u.gapPct); uGrowthClass = u.gapPct>=0?'gap-up':'gap-down'; uTitle = 'Gap MTD vs Target';
+          } else {
+            const uCmp = computeComparison(state.compareMode, c.name, u.name);
+            uGrowthTxt = uCmp.growth===null ? 'N/A' : pct(uCmp.growth);
+            uGrowthClass = uCmp.growth===null ? '' : (uCmp.growth>=0?'gap-up':'gap-down');
+            uTitle = `${COMPARE_LABELS[state.compareMode]} · Gap MTD: ${pct(u.gapPct)}`;
+          }
           return `
           <div class="nav-unit ${state.unit===u?'active':''}" data-action="unit" data-ci="${ci}" data-ui="${ui}">
             <span>${u.name}</span>
-            <span class="nav-unit-gap ${uGrowthClass}" title="Gap MTD: ${pct(u.gapPct)}">${uGrowthTxt}</span>
+            <span class="nav-unit-gap ${uGrowthClass}" title="${uTitle}">${uGrowthTxt}</span>
           </div>`;
         }).join('')}
       </div>
@@ -1028,17 +1049,22 @@ function renderChart(){
     actualLabel = "Est. Revenue (Aktual)";
   }
 
-  // Bar ke-3: closing periode pembanding, mengikuti lensa MoM/QoQ/YoY yang aktif
+  // Bar ke-3: closing periode pembanding, mengikuti lensa MoM/QoQ/YoY yang aktif.
+  // Kalau mode "Semua" dipilih, tidak ada lensa spesifik -> kembali ke tampilan 2-bar original.
+  const showCompareBar = state.compareMode !== 'all';
   const cmpLabel = COMPARE_LABELS[state.compareMode];
   const compareLabel = `Est. Closing (Pembanding ${cmpLabel})`;
-  const compareRows = rowChannelNames.map((chName, i) => computeComparison(state.compareMode, chName, rowUnitNames[i]));
-  const compareVals = compareRows.map(c => c.prior);
-  const hasAnyCompare = compareVals.some(v => v !== null);
+  const compareVals = showCompareBar
+    ? rowChannelNames.map((chName, i) => computeComparison(state.compareMode, chName, rowUnitNames[i]).prior)
+    : rows.map(()=>null);
 
-  document.getElementById('chartLegend').innerHTML = `
+  document.getElementById('chartLegend').innerHTML = showCompareBar ? `
     <span><i style="background:${COLOR_TARGET}"></i>${targetLabel}</span>
     <span><i style="background:${COLOR_ACTUAL}"></i>${actualLabel}</span>
     <span><i style="background:${COLOR_COMPARE}"></i>${compareLabel}</span>
+  ` : `
+    <span><i style="background:${COLOR_TARGET}"></i>${targetLabel}</span>
+    <span><i style="background:${COLOR_ACTUAL}"></i>${actualLabel}</span>
   `;
 
   // ---- geometry ----
@@ -1053,7 +1079,8 @@ function renderChart(){
   const scaleY = v => plotH - (v/maxVal)*plotH;
 
   const groupW = plotW / n;
-  const barW = Math.min(32, groupW*0.2);
+  const barCount = showCompareBar ? 3 : 2;
+  const barW = Math.min(barCount===3?32:40, groupW*(barCount===3?0.2:0.26));
   const barGap = 5;
 
   let gridSVG = '';
@@ -1067,7 +1094,7 @@ function renderChart(){
   let barsSVG = '';
   let labelsSVG = '';
   const tooltipData = [];
-  const groupTotalW = 3*barW + 2*barGap;
+  const groupTotalW = barCount*barW + (barCount-1)*barGap;
 
   rows.forEach((r, i)=>{
     const cx = marginL + groupW*i + groupW/2;
@@ -1081,7 +1108,7 @@ function renderChart(){
     const tH = plotH - scaleY(tVal), aH = plotH - scaleY(aVal);
 
     let compareBarSVG = '';
-    if(cVal !== null){
+    if(showCompareBar && cVal !== null){
       const cY = marginT + scaleY(cVal), cH = plotH - scaleY(cVal);
       compareBarSVG = `<rect x="${cX}" y="${cY}" width="${barW}" height="${Math.max(cH,1)}" rx="4" fill="${COLOR_COMPARE}" fill-opacity="0.85"></rect>`;
     }
@@ -1121,7 +1148,7 @@ function renderChart(){
         <div class="tt-title">${d.name}</div>
         <div class="tt-row"><span style="color:${COLOR_TARGET}">${targetLabel}</span><b>&nbsp;${fmtIDR(d.tVal,false)}</b></div>
         <div class="tt-row"><span style="color:${COLOR_ACTUAL}">${actualLabel}</span><b>&nbsp;${fmtIDR(d.aVal,false)}</b></div>
-        ${d.cVal!==null ? `<div class="tt-row"><span style="color:${COLOR_COMPARE}">${compareLabel}</span><b>&nbsp;${fmtIDR(d.cVal,false)}</b></div>` : `<div class="tt-row"><span style="color:${COLOR_COMPARE}">${compareLabel}</span><b>&nbsp;N/A</b></div>`}
+        ${showCompareBar ? (d.cVal!==null ? `<div class="tt-row"><span style="color:${COLOR_COMPARE}">${compareLabel}</span><b>&nbsp;${fmtIDR(d.cVal,false)}</b></div>` : `<div class="tt-row"><span style="color:${COLOR_COMPARE}">${compareLabel}</span><b>&nbsp;N/A</b></div>`) : ''}
       `;
       tooltip.style.left = Math.min(Math.max(px-70,0), rect.width-170) + 'px';
       tooltip.style.top = '4px';
@@ -1183,47 +1210,38 @@ function renderScopeHeader(){
   }
 }
 
-/* ============ COMPARISON CARDS (MoM / QoQ / YoY) — sekarang bisa dipilih ============ */
-function renderComparisons(){
-  const grid = document.getElementById('compareGrid');
-  const note = document.getElementById('compareNote');
-  note.textContent = comparisonsAreSynthetic
-    ? `* berbasis data historis contoh (demo) — hubungkan Google Sheet dengan kolom Period untuk data riwayat asli`
-    : `Periode berjalan: ${formatPeriodLabel(currentPeriod)}`;
-
+/* ============ COMPARE MODE SELECTOR (compact, di NavPane) ============ */
+function renderCompareNav(){
+  const wrap = document.getElementById('navCompareList');
   const hasHistory = Object.keys(periodsIndex).length > 1;
+
   if(!hasHistory){
-    grid.innerHTML = `<div class="compare-card" style="grid-column:1/-1; cursor:default;">
-      <div class="compare-detail">Data historis belum tersedia. Tambahkan kolom <b>Period</b> (format YYYY-MM) dan beberapa baris bulan sebelumnya di Google Sheet untuk mengaktifkan perbandingan MoM/QoQ/YoY.</div>
-    </div>`;
+    wrap.innerHTML = `<div class="compare-empty-note">Data historis belum tersedia. Tambahkan kolom <b>Period</b> (format YYYY-MM) di Google Sheet untuk mengaktifkan MoM/QoQ/YoY.</div>`;
     return;
   }
 
   const channelName = state.channel ? state.channel.name : null;
   const unitName = state.unit ? state.unit.name : null;
+  const scopeData = currentScope().data;
 
-  const cards = ['mom','qoq','yoy'].map(mode => {
+  const items = ['all','mom','qoq','yoy'].map(mode => {
+    if(mode === 'all'){
+      return { mode, label:'Semua', valueTxt: pct(scopeData.gapPct), valueClass: scopeData.gapPct>=0?'gap-up':'gap-down', title:'Tampilan default (Gap MTD vs Target), tanpa lensa pertumbuhan periode' };
+    }
     const c = computeComparison(mode, channelName, unitName);
-    const detail = (c.prior !== null)
-      ? `${fmtIDR(c.curr,false)} vs ${fmtIDR(c.prior,false)}`
-      : `Data pembanding (${mode==='qoq'?'quarter':'periode'} terkait) tidak tersedia`;
-    return { mode, badge: COMPARE_LABELS[mode], growth: c.growth, detail, vs: c.vs };
+    const valueTxt = c.growth===null ? 'N/A' : pct(c.growth);
+    const valueClass = c.growth===null ? '' : (c.growth>=0?'gap-up':'gap-down');
+    return { mode, label: COMPARE_LABELS[mode], valueTxt, valueClass, title: `${c.vs}${c.prior!==null ? ' · '+fmtIDR(c.curr,false)+' vs '+fmtIDR(c.prior,false) : ''}` };
   });
 
-  grid.innerHTML = cards.map(c => `
-    <div class="compare-card ${state.compareMode===c.mode ? 'active' : ''}" data-mode="${c.mode}" title="Klik untuk jadikan lensa pertumbuhan aktif di KPI, NavPane, dan Chart">
-      <div class="compare-top">
-        <span class="compare-badge">${c.badge}</span>
-        <span class="compare-vs">${c.vs}</span>
-      </div>
-      <div class="compare-growth ${c.growth===null ? 'na' : (c.growth>=0?'up':'down')}">
-        ${c.growth===null ? 'N/A' : (c.growth>=0?'▲ ':'▼ ') + Math.abs(c.growth).toFixed(2) + '%'}
-      </div>
-      <div class="compare-detail">${c.detail}</div>
+  wrap.innerHTML = items.map(it => `
+    <div class="nav-compare-item ${state.compareMode===it.mode ? 'active':''}" data-mode="${it.mode}" title="${it.title}">
+      <span>${it.label}</span>
+      <span class="nav-compare-value ${it.valueClass}">${it.valueTxt}</span>
     </div>
-  `).join('');
+  `).join('') + (comparisonsAreSynthetic ? `<div class="compare-empty-note">* data historis contoh (demo)</div>` : '');
 
-  grid.querySelectorAll('.compare-card[data-mode]').forEach(el=>{
+  wrap.querySelectorAll('[data-mode]').forEach(el=>{
     el.addEventListener('click', ()=> setCompareMode(el.dataset.mode));
   });
 }
@@ -1246,7 +1264,7 @@ function renderAll(){
   renderChart();
   renderTable();
   renderScopeHeader();
-  renderComparisons();
+  renderCompareNav();
 }
 
 /* ============ DATA SOURCE BADGE ============ */
@@ -1257,8 +1275,11 @@ function setDataSrcBadge(kind, text){
 }
 function updateHeaderCounts(){
   const totalUnits = DATA.reduce((s,c)=>s+c.units.length, 0);
+  const periodLabel = (typeof formatPeriodLabel === 'function' && currentPeriod) ? formatPeriodLabel(currentPeriod) : currentPeriod;
   document.getElementById('headerSub').innerHTML =
-    `Target periode Jul-2026 &nbsp;·&nbsp; ${DATA.length} Group Channel / ${totalUnits} Group Unit Business`;
+    `Target periode ${periodLabel} &nbsp;·&nbsp; ${DATA.length} Group Channel / ${totalUnits} Group Unit Business`;
+  const titleEl = document.getElementById('dashTitle');
+  if(titleEl) titleEl.textContent = `Pantauan Pendapatan — ${periodLabel}`;
 }
 
 /* ============ LOAD FROM GOOGLE SHEET (dengan fallback ke sample) ============ */
@@ -1285,6 +1306,7 @@ async function loadData(isManualRefresh=false){
     const now = new Date();
     setDataSrcBadge('live', `Live dari Google Sheet · ${now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}`);
     updateHeaderCounts();
+    latestActualPeriod = currentPeriod;
   } catch(e) {
     console.warn('[sheet-config] Fetch gagal, fallback ke data contoh:', e.message);
     // Fallback berlapis: kalau bahkan pembuatan data contoh ini gagal (mis. karena
@@ -1306,17 +1328,81 @@ async function loadData(isManualRefresh=false){
     state.channel = null; state.unit = null;
     setDataSrcBadge('error', 'Gagal ambil Google Sheet — pakai data contoh');
     updateHeaderCounts();
+    latestActualPeriod = currentPeriod;
   }
 
   try {
     buildTicker();
     renderAll();
+    renderPeriodSelector();
   } catch(e3){
     console.error('[render] Gagal render dashboard:', e3);
     showFatalError(e3);
   }
   btn.disabled = false;
 }
+
+/* ============ PILIH BULAN & TAHUN (Periode) ============ */
+/** Isi dropdown periode dari semua periode yang ada di periodsIndex, terbaru di atas. */
+function renderPeriodSelector(){
+  const sel = document.getElementById('periodSelect');
+  if(!sel) return;
+  const periods = Object.keys(periodsIndex).sort().reverse(); // "YYYY-MM" -> urut string aman, terbaru duluan
+  sel.innerHTML = periods.map(p => {
+    const isLive = p === latestActualPeriod;
+    return `<option value="${p}" ${p===currentPeriod?'selected':''}>${formatPeriodLabel(p)}${isLive?' (berjalan)':''}</option>`;
+  }).join('');
+  updatePaceChip();
+}
+
+/** Pindah "sudut pandang" dashboard ke bulan/tahun lain yang dipilih user.
+ *  Semua yang ada (KPI, NavPane, Chart, Tabel, MoM/QoQ/YoY) otomatis mengikuti
+ *  karena semuanya membaca dari variabel global DATA/GRAND/currentPeriod ini. */
+function setViewPeriod(period){
+  if(!periodsIndex[period]) return;
+  currentPeriod = period;
+  DATA = periodsIndex[period].DATA;
+  GRAND = periodsIndex[period].GRAND;
+
+  // jaga seleksi channel/unit tetap valid di periode baru (kalau ada datanya)
+  if(state.channel){
+    const match = DATA.find(c => c.name === state.channel.name);
+    state.channel = match || null;
+    if(state.unit && state.channel){
+      state.unit = state.channel.units.find(u => u.name === state.unit.name) || null;
+    } else {
+      state.unit = null;
+    }
+  }
+
+  updateHeaderCounts();
+  buildTicker();
+  renderAll();
+  updatePaceChip();
+}
+
+/** Progress bulan (hari ke-N dari 31) cuma relevan untuk periode berjalan yang
+ *  sungguhan (MTD). Kalau user sedang lihat bulan/tahun lain, ganti jadi catatan
+ *  "data historis, final" dan tetap tampilkan Achievement % secara dinamis. */
+function updatePaceChip(){
+  const achEl = document.getElementById('paceAch');
+  const achBar = document.querySelector('.pace-chip .pace-bar .ach');
+  if(achEl) achEl.textContent = GRAND.achPct.toFixed(2) + '%';
+  if(achBar) achBar.style.width = Math.min(Math.max(GRAND.achPct,0),100) + '%';
+
+  const elapsedRow = document.getElementById('paceElapsedRow');
+  const legend = document.getElementById('paceLegend');
+  const isLive = currentPeriod === latestActualPeriod;
+
+  if(elapsedRow) elapsedRow.style.display = isLive ? '' : 'none';
+  if(legend){
+    legend.innerHTML = isLive
+      ? `<span><i class="dot" style="background:var(--muted-2)"></i>Periode berjalan</span><span><i class="dot" style="background:var(--green)"></i>${GRAND.gapPct>=0?'Ahead of pace':'Below pace'}</span>`
+      : `<span><i class="dot" style="background:var(--amber)"></i>Data historis · ${formatPeriodLabel(currentPeriod)} (final, bukan MTD)</span>`;
+  }
+}
+
+document.getElementById('periodSelect').addEventListener('change', (e)=> setViewPeriod(e.target.value));
 
 /** Tampilkan pesan error yang JELAS TERLIHAT di halaman (bukan blank/diam saja)
  *  kalau ada kegagalan tak terduga saat render, supaya mudah dilaporkan/didiagnosis. */
