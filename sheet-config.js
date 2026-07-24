@@ -53,7 +53,7 @@
 
 const SHEET_CONFIG = {
   // Wajib diisi: ID spreadsheet (lihat langkah 3 di atas)
-  spreadsheetId: "1pydmq-phJN6ByyAFKJAkBRpPHdZx1PBWao6iMWNagkw",
+  spreadsheetId: "PASTE_SPREADSHEET_ID_DI_SINI",
 
   // Nama tab/sheet yang berisi data. Kosongkan gid jika pakai ini.
   sheetName: "Sheet1",
@@ -150,7 +150,7 @@ function formatPeriodLabel(period) {
  * { period, groupChannel, groupUnitBusiness, target, mtdTarget, estimatedRevenue, estimatedClosing }
  */
 async function fetchSheetRows(config = SHEET_CONFIG) {
-  if (!config.spreadsheetId || config.spreadsheetId.includes("1pydmq-phJN6ByyAFKJAkBRpPHdZx1PBWao6iMWNagkw")) {
+  if (!config.spreadsheetId || config.spreadsheetId.includes("PASTE_SPREADSHEET_ID")) {
     throw new Error("SHEET_CONFIG.spreadsheetId belum diisi. Lihat komentar di sheet-config.js.");
   }
 
